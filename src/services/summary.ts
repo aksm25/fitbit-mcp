@@ -177,7 +177,7 @@ export async function buildDailySummary(client: Pick<FitbitClient, "get">, optio
     },
     safety: {
       medical_advice: false,
-      api_boundary: "Fitbit Web API provides processed activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
+      api_boundary: "Google Health API provides processed Fitbit activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
     }
   };
 }

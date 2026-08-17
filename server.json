@@ -32,7 +32,7 @@
         },
         {
           "name": "FITBIT_REDIRECT_URI",
-          "description": "Redirect URI configured in the Fitbit Developer Dashboard. Optional when configured with fitbit-mcp-server setup.",
+          "description": "Redirect URI configured for the Google OAuth client. Optional when configured with fitbit-mcp-server setup.",
           "isRequired": false,
           "format": "string",
           "isSecret": false

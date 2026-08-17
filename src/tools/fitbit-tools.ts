@@ -214,15 +214,15 @@ export function registerFitbitTools(server: McpServer): void {
     const steps = [
       {
         step: 1,
-        title: hasEnv ? "(done) Fitbit Developer credentials configured" : "Register a Fitbit app at https://dev.fitbit.com/apps",
+        title: hasEnv ? "(done) Google OAuth credentials configured" : "Create Google Health OAuth credentials",
         action: hasEnv
           ? "FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REDIRECT_URI are all set."
-          : `Create a Fitbit Developer app (type: Personal or Server) with a Callback URL like ${status.redirect_uri ?? "http://127.0.0.1:3000/callback"}, then set: ${status.missing_env.join(", ")}.`,
+          : `Follow https://developers.google.com/health/setup and create a Google OAuth client with redirect URL ${status.redirect_uri ?? "http://127.0.0.1:3000/callback"}, then set: ${status.missing_env.join(", ")}.`,
         done: hasEnv,
       },
       {
         step: 2,
-        title: hasToken ? "(done) Local token present — ready to read Fitbit data" : "Run the OAuth dance",
+        title: hasToken ? "(done) Local token present — ready to read Fitbit data through Google Health" : "Connect Google Health",
         action: hasToken
           ? "Tokens stored under ~/.fitbit-mcp/tokens.json. The connector will refresh automatically when needed."
           : "Run `fitbit-mcp-server auth` (or call fitbit_get_auth_url + fitbit_exchange_code from the agent). Open the URL, grant access, paste the code.",
@@ -243,7 +243,7 @@ export function registerFitbitTools(server: McpServer): void {
       ready: hasEnv && hasToken,
       steps,
       next: steps.find((s) => !s.done) ?? steps[steps.length - 1],
-      migration_note: "Fitbit accounts are migrating to Google Health Connect. Existing OAuth tokens still work; new users who already use a Pixel Watch or Google Health Connect may prefer the google-health-mcp connector instead. See https://blog.fitbit.com/ for the latest migration timeline.",
+      migration_note: "This version uses the new Google Health API. Old Fitbit Web API tokens cannot be reused, so one Google authorization is required.",
       cross_connector_hints: [
         "Pair Fitbit sleep + steps with wellness-nourish for sleep-aware meal coaching.",
         "Pair Fitbit HRV/RHR with wellness-cycle-coach for late-luteal load adjustments.",
@@ -253,7 +253,7 @@ export function registerFitbitTools(server: McpServer): void {
     const markdown = bulletList("Fitbit Quickstart", {
       ready: payload.ready,
       next: payload.next.title,
-      migration: "Fitbit -> Google Health Connect migration is rolling out; existing tokens still work.",
+      migration: "This connector now reads Fitbit data through the Google Health API.",
     });
     return makeResponse(payload, response_format, markdown);
   });
@@ -278,8 +278,8 @@ export function registerFitbitTools(server: McpServer): void {
   });
 
   server.registerTool("fitbit_get_auth_url", {
-    title: "Get Fitbit OAuth URL",
-    description: "Generate a Fitbit OAuth authorization URL. Use this first when no local token exists.",
+    title: "Get Google Health OAuth URL",
+    description: "Generate a Google Health OAuth authorization URL. Use this first when no local token exists.",
     inputSchema: AuthUrlInputSchema.shape,
     outputSchema: AuthUrlOutputSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
@@ -288,15 +288,15 @@ export function registerFitbitTools(server: McpServer): void {
       const config = getConfig();
       const url = new FitbitClient(config).authUrl(params.state, params.scopes);
       const output = { auth_url: url, redirect_uri: config.redirectUri, scopes: params.scopes?.length ? params.scopes : config.scopes, next_step: "Open auth_url, approve access, then pass the returned code or full redirect URL to fitbit_exchange_code." };
-      return makeResponse(output, params.response_format, bulletList("Fitbit OAuth URL", output));
+      return makeResponse(output, params.response_format, bulletList("Google Health OAuth URL", output));
     } catch (error) {
       return makeError((error as Error).message);
     }
   });
 
   server.registerTool("fitbit_exchange_code", {
-    title: "Exchange Fitbit OAuth Code",
-    description: "Exchange a Fitbit OAuth authorization code for local tokens. Tokens are stored locally with 0600 permissions and are never returned. Requires explicit user action: the user must complete browser OAuth and supply the authorization code (agents must not invent codes).",
+    title: "Exchange Google Health OAuth Code",
+    description: "Exchange a Google Health OAuth authorization code for local tokens. Tokens are stored locally with 0600 permissions and are never returned. Requires explicit user action: the user must complete browser OAuth and supply the authorization code (agents must not invent codes).",
     inputSchema: ExchangeCodeInputSchema.shape,
     outputSchema: ExchangeCodeOutputSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
@@ -304,7 +304,7 @@ export function registerFitbitTools(server: McpServer): void {
     try {
       const result = await client().exchangeCode(params.code);
       const output = { ...result, note: "Token values were stored locally and intentionally omitted from this response." };
-      return makeResponse(output, params.response_format, bulletList("Fitbit OAuth Exchange", output));
+      return makeResponse(output, params.response_format, bulletList("Google Health OAuth Exchange", output));
     } catch (error) {
       return makeError((error as Error).message);
     }

@@ -75,7 +75,7 @@ function demoDailySummary() {
     safety: {
       medical_advice: false,
       api_boundary:
-        "Fitbit Web API provides processed activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
+        "Google Health API provides processed Fitbit activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
     }
   };
 }
@@ -102,7 +102,7 @@ function demoWellnessContext() {
 
 /**
  * Endpoint-passthrough shape shared by every date tool: the envelope is ours,
- * `data` is the Fitbit Web API payload after the privacy layer runs. Shown in
+ * `data` is the compatibility payload built from Google Health data after the privacy layer runs. Shown in
  * the default `structured` mode, which keeps the API keys and strips only
  * identifying/GPS fields.
  */
@@ -140,9 +140,9 @@ export function buildDemoPayload() {
     },
     notes: [
       "All sample data is synthetic; tagged with is_demo=true.",
-      "Real calls return live data from the Fitbit Web API after OAuth setup.",
-      "Summary tools return the shape above; date tools return { endpoint, privacy_mode, data } where data is the Fitbit API payload after redaction.",
-      "Some endpoints (e.g. intraday heart rate) may require Fitbit Developer app type approval."
+      "Real calls return live Fitbit data from the Google Health API after OAuth setup.",
+      "Summary tools return the shape above; date tools return { endpoint, privacy_mode, data } where data is normalized from Google Health after redaction.",
+      "Some data types depend on the Fitbit device, account, and Google Health permissions."
     ]
   };
 }

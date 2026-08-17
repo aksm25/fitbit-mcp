@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildConnectionStatus } from '../dist/services/connection-status.js';
 import { formatCollection } from '../dist/services/format.js';
+import { DEFAULT_SCOPES } from '../dist/constants.js';
 
 const dir = mkdtempSync(join(tmpdir(), 'fitbit-mcp-agent-readiness-'));
 
@@ -28,7 +29,7 @@ try {
     access_token: 'access',
     refresh_token: 'refresh',
     expires_at: 2_000_000,
-    scope: 'profile'
+    scope: 'https://www.googleapis.com/auth/googlehealth.profile.readonly'
   }), { mode: 0o600 });
 
   const limited = await buildConnectionStatus({
@@ -44,9 +45,9 @@ try {
 
   assert.equal(limited.ready_for_fitbit_api, false, 'A profile-only token should not be reported as fully ready for Fitbit health tools.');
   assert.equal(limited.ok, false);
-  assert.deepEqual(limited.oauth.granted_scopes, ['profile']);
-  assert.ok(limited.oauth.missing_recommended_scopes.includes('activity'));
-  assert.ok(limited.oauth.missing_recommended_scopes.includes('sleep'));
+  assert.deepEqual(limited.oauth.granted_scopes, ['https://www.googleapis.com/auth/googlehealth.profile.readonly']);
+  assert.ok(limited.oauth.missing_recommended_scopes.includes('https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly'));
+  assert.ok(limited.oauth.missing_recommended_scopes.includes('https://www.googleapis.com/auth/googlehealth.sleep.readonly'));
   assert.equal(limited.oauth.activity_tools_ready, false);
   assert.equal(limited.oauth.profile_tools_ready, true);
   assert.ok(limited.next_steps.some((step) => /re-authorize/i.test(step) && /sleep/.test(step)));
@@ -55,7 +56,7 @@ try {
     access_token: 'access',
     refresh_token: 'refresh',
     expires_at: 2_000_000,
-    scope: 'activity heartrate profile settings sleep weight nutrition'
+    scope: DEFAULT_SCOPES.join(' ')
   }), { mode: 0o600 });
 
   const ready = await buildConnectionStatus({

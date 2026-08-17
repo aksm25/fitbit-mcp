@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parseLocalRedirectUri } from '../dist/cli/auth.js';
 import { buildConnectionStatus } from '../dist/services/connection-status.js';
+import { DEFAULT_SCOPES } from '../dist/constants.js';
 
 const dir = mkdtempSync(join(tmpdir(), 'fitbit-mcp-cli-'));
 
@@ -20,7 +21,7 @@ try {
     access_token: 'access',
     refresh_token: 'refresh',
     expires_at: 2_000_000,
-    scope: 'activity heartrate profile settings sleep weight nutrition'
+    scope: DEFAULT_SCOPES.join(' ')
   }), { mode: 0o600 });
 
   const ready = await buildConnectionStatus({
@@ -120,7 +121,7 @@ try {
   const savedConfig = JSON.parse(readFileSync(configPath, 'utf8'));
   assert.equal(savedConfig.FITBIT_CLIENT_ID, 'client-id-from-setup');
   assert.equal(savedConfig.FITBIT_CLIENT_SECRET, 'client-secret-from-setup');
-  assert.equal(savedConfig.FITBIT_SCOPES, 'activity heartrate profile settings sleep weight nutrition');
+  assert.equal(savedConfig.FITBIT_SCOPES, DEFAULT_SCOPES.join(' '));
   assert.equal(savedConfig.FITBIT_PRIVACY_MODE, 'summary');
   assert.equal(savedConfig.FITBIT_CACHE, 'sqlite');
 

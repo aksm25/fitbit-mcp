@@ -42,7 +42,7 @@ const TIMEZONE = 'America/Fortaleza';
 const HEART_ENDPOINT = `/1/user/-/activities/heart/date/${DATE}/1d.json`;
 
 /**
- * Synthetic Fitbit Web API responses, shaped like the documented endpoints.
+ * Synthetic compatibility responses, shaped like the stable fitbit_* tool contract.
  * Values are obviously fake; no real health data belongs in this repo.
  */
 const FITBIT_API_FIXTURE = {
