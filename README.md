@@ -37,8 +37,8 @@ Default is **stdio**. Optional Streamable HTTP — no session id, JSON responses
 
 ```bash
 npx -y fitbit-mcp-unofficial --http
-# GET  http://127.0.0.1:3000/health
-# POST http://127.0.0.1:3000/mcp   (sessionless)
+# GET  http://127.0.0.1:8010/health
+# POST http://127.0.0.1:8010/mcp   (sessionless)
 ```
 
 Env: `FITBIT_MCP_HOST`, `FITBIT_MCP_PORT`, `FITBIT_MCP_TRANSPORT=http`.

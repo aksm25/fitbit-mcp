@@ -31,7 +31,7 @@ async function runStdio(): Promise<void> {
 async function runHttp(): Promise<void> {
   const app = express();
   const host = process.env.FITBIT_MCP_HOST ?? "127.0.0.1";
-  const port = Number(process.env.FITBIT_MCP_PORT ?? 3000);
+  const port = Number(process.env.FITBIT_MCP_PORT ?? 8010);
   const allowedOrigin = process.env.FITBIT_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
 
   app.use(express.json({ limit: "1mb" }));

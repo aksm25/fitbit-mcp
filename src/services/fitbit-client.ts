@@ -13,6 +13,7 @@ import { fetchWithCache, getCacheStats } from "./http-cache.js";
 import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
 import { TokenStore } from "./token-store.js";
+import { resolveCivilDate, shiftCivilDate } from "./civil-date.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -185,10 +186,19 @@ export class FitbitClient {
       pageSize: 10000
     })));
     const byType = Object.fromEntries(types.map((type, index) => [type, pages[index].dataPoints ?? []]));
-    const steps = sumPoints(byType.steps, "steps", "count");
-    const calories = sumPoints(byType["active-energy-burned"], "active-energy-burned", "kcal")
-      + sumPoints(byType["basal-energy-burned"], "basal-energy-burned", "kcal");
-    const distanceKm = sumPoints(byType.distance, "distance", "millimeters", "distanceMillimeters") / 1_000_000;
+    const hasSteps = byType.steps.length > 0;
+    const hasActiveCalories = byType["active-energy-burned"].length > 0;
+    const hasBasalCalories = byType["basal-energy-burned"].length > 0;
+    const hasDistance = byType.distance.length > 0;
+    const hasActiveMinutes = byType["active-minutes"].length > 0;
+    const hasActivityLevels = byType["activity-level"].length > 0;
+    const steps = hasSteps ? sumPoints(byType.steps, "steps", "count") : undefined;
+    const activeCalories = hasActiveCalories ? sumPoints(byType["active-energy-burned"], "active-energy-burned", "kcal") : undefined;
+    const basalCalories = hasBasalCalories ? sumPoints(byType["basal-energy-burned"], "basal-energy-burned", "kcal") : undefined;
+    const calories = activeCalories === undefined && basalCalories === undefined
+      ? undefined
+      : (activeCalories ?? 0) + (basalCalories ?? 0);
+    const distanceKm = hasDistance ? sumPoints(byType.distance, "distance", "millimeters", "distanceMillimeters") / 1_000_000 : undefined;
     const active = aggregateActiveMinutes(byType["active-minutes"]);
     const levels = aggregateActivityLevels(byType["activity-level"]);
     return {
@@ -197,11 +207,21 @@ export class FitbitClient {
       summary: {
         steps,
         caloriesOut: calories,
-        sedentaryMinutes: levels.sedentary,
-        lightlyActiveMinutes: active.lightlyActive || levels.lightlyActive,
-        fairlyActiveMinutes: active.fairlyActive || levels.fairlyActive,
-        veryActiveMinutes: active.veryActive || levels.veryActive,
-        distances: [{ activity: "total", distance: round(distanceKm, 3) }]
+        activeCalories,
+        basalCalories,
+        caloriesOutComplete: hasActiveCalories && hasBasalCalories,
+        calorieSources: { active: hasActiveCalories, basal: hasBasalCalories },
+        sedentaryMinutes: hasActivityLevels ? levels.sedentary : undefined,
+        lightlyActiveMinutes: hasActiveMinutes || hasActivityLevels ? active.lightlyActive || levels.lightlyActive : undefined,
+        fairlyActiveMinutes: hasActiveMinutes || hasActivityLevels ? active.fairlyActive || levels.fairlyActive : undefined,
+        veryActiveMinutes: hasActiveMinutes || hasActivityLevels ? active.veryActive || levels.veryActive : undefined,
+        distances: hasDistance ? [{ activity: "total", distance: round(distanceKm!, 3) }] : [],
+        dataCoverage: {
+          activity: hasSteps || hasActiveCalories || hasBasalCalories || hasDistance || hasActiveMinutes || hasActivityLevels,
+          steps: hasSteps,
+          activeMinutes: hasActiveMinutes || hasActivityLevels,
+          calories: hasActiveCalories || hasBasalCalories
+        }
       }
     };
   }
@@ -457,7 +477,7 @@ function pathDate(path: string): string {
 }
 
 function normalizeToday(date: string): string {
-  return date === "today" ? new Date().toISOString().slice(0, 10) : date;
+  return resolveCivilDate(date);
 }
 
 function dateFilter(type: string, date: string, startTime?: string, endTime?: string): string {
@@ -635,9 +655,7 @@ function durationMs(start: string, end: string): number {
 }
 
 function addDays(date: string, days: number): string {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  parsed.setUTCDate(parsed.getUTCDate() + days);
-  return parsed.toISOString().slice(0, 10);
+  return shiftCivilDate(date, days);
 }
 
 function round(value: number, digits: number): number {

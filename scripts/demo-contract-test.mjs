@@ -66,6 +66,7 @@ const FITBIT_API_FIXTURE = {
     summary: {
       steps: 8420,
       caloriesOut: 2310,
+      caloriesOutComplete: true,
       fairlyActiveMinutes: 22,
       veryActiveMinutes: 16,
       sedentaryMinutes: 612,

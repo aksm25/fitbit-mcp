@@ -41,6 +41,7 @@ import { applyPrivacy, resolvePrivacyMode } from "../services/privacy.js";
 import { buildDailySummary, buildWeeklySummary, formatSummaryMarkdown } from "../services/summary.js";
 import { buildWellnessContext, formatWellnessContextMarkdown } from "../services/context.js";
 import { FitbitClient, toFitbitCivilDate } from "../services/fitbit-client.js";
+import { resolveCivilDate } from "../services/civil-date.js";
 import {
   SERIES_HARD_MAX_POINTS,
   buildHeartSeries,
@@ -59,12 +60,14 @@ import {
 
 const DateReadInputSchema = z.object({
   date: z.string().default("today").describe("Date as yyyy-MM-dd or today. ISO date-times are accepted and reduced to the written calendar day."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used when date is today. Defaults to the server timezone."),
   privacy_mode: SimpleReadInputSchema.shape.privacy_mode,
   response_format: ResponseFormatSchema
 }).strict();
 
 const HeartIntradayInputSchema = z.object({
   date: z.string().default("today").describe("Date as yyyy-MM-dd or today. ISO date-times are accepted and reduced to the written calendar day."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used when date is today. Defaults to the server timezone."),
   detail_level: z.enum(["1sec", "1min", "5min", "15min"]).default("1min"),
   start_time: z.string().regex(/^\d{2}:\d{2}$/).optional().describe("Optional HH:mm start time."),
   end_time: z.string().regex(/^\d{2}:\d{2}$/).optional().describe("Optional HH:mm end time."),
@@ -123,7 +126,7 @@ function registerDateTool(server: McpServer, name: string, title: string, endpoi
       try {
         const config = getConfig();
         const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
-        const date = toFitbitCivilDate(params.date);
+        const date = resolveCivilDate(toFitbitCivilDate(params.date), params.timezone);
         const endpoint = endpointBuilder(date);
         const data = applyPrivacy(endpoint, await new FitbitClient(config).get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, params.response_format, bulletList(title, { endpoint, data: JSON.stringify(data) }));
@@ -373,7 +376,7 @@ export function registerFitbitTools(server: McpServer): void {
     try {
       const config = getConfig();
       const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
-      const date = toFitbitCivilDate(params.date);
+      const date = resolveCivilDate(toFitbitCivilDate(params.date), params.timezone);
       const suffix = params.start_time && params.end_time ? `/time/${params.start_time}/${params.end_time}` : "";
       const endpoint = `/1/user/-/activities/heart/date/${date}/1d/${params.detail_level}${suffix}.json`;
       const data = applyPrivacy(endpoint, await new FitbitClient(config).get(endpoint), privacyMode);
@@ -395,7 +398,7 @@ export function registerFitbitTools(server: McpServer): void {
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }, async (params) => {
     try {
-      const date = toFitbitCivilDate(params.date);
+      const date = resolveCivilDate(toFitbitCivilDate(params.date), params.timezone);
       const hasWindow = Boolean(params.start_time && params.end_time);
       const suffix = hasWindow ? `/time/${params.start_time}/${params.end_time}` : "";
       const endpoint = `/1/user/-/activities/heart/date/${date}/1d/${params.detail_level}${suffix}.json`;
