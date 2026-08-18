@@ -183,11 +183,23 @@ export class FitbitClient {
 
   private async getActivityDay(date: string): Promise<unknown> {
     const types = ["steps", "active-energy-burned", "basal-energy-burned", "distance", "active-minutes", "activity-level"];
-    const pages = await Promise.all(types.map((type) => this.collectReconciledDataPoints(type, {
+    const results = await Promise.allSettled(types.map((type) => this.collectReconciledDataPoints(type, {
       filter: dateFilter(type, date),
       pageSize: 10000
     })));
-    const byType = Object.fromEntries(types.map((type, index) => [type, pages[index]]));
+    const byType: Record<string, unknown[]> = {};
+    const failedMetrics: string[] = [];
+    results.forEach((result, index) => {
+      const type = types[index];
+      if (result.status === "fulfilled") {
+        byType[type] = result.value;
+        return;
+      }
+      byType[type] = [];
+      failedMetrics.push(type);
+      const message = result.reason instanceof Error ? result.reason.message : "Unknown Google Health error";
+      process.stderr.write(`[fitbit-mcp] activity metric error (${type}): ${redactErrorMessage(message)}\n`);
+    });
     const hasSteps = byType.steps.length > 0;
     const hasActiveCalories = byType["active-energy-burned"].length > 0;
     const hasBasalCalories = byType["basal-energy-burned"].length > 0;
@@ -222,7 +234,9 @@ export class FitbitClient {
           activity: hasSteps || hasActiveCalories || hasBasalCalories || hasDistance || hasActiveMinutes || hasActivityLevels,
           steps: hasSteps,
           activeMinutes: hasActiveMinutes || hasActivityLevels,
-          calories: hasActiveCalories || hasBasalCalories
+          calories: hasActiveCalories || hasBasalCalories,
+          partial: failedMetrics.length > 0,
+          failedMetrics
         }
       }
     };

@@ -21,8 +21,16 @@ const client = new FitbitClient({
 
 const originalFetch = globalThis.fetch;
 const originalNoCache = process.env.FITBIT_NO_CACHE;
+const originalNoRetry = process.env.FITBIT_NO_RETRY;
+const originalStderrWrite = process.stderr.write.bind(process.stderr);
 const requestedUrls = [];
+const warnings = [];
 process.env.FITBIT_NO_CACHE = 'true';
+process.env.FITBIT_NO_RETRY = 'true';
+process.stderr.write = (chunk) => {
+  warnings.push(String(chunk));
+  return true;
+};
 
 const responses = {
   steps: {
@@ -70,6 +78,8 @@ try {
   assert.equal(activity.summary.fairlyActiveMinutes, 10);
   assert.equal(activity.summary.veryActiveMinutes, 5);
   assert.equal(activity.summary.dataCoverage.steps, true);
+  assert.equal(activity.summary.dataCoverage.partial, false);
+  assert.deepEqual(activity.summary.dataCoverage.failedMetrics, []);
   assert.equal(requestedUrls.length, 7, 'six data types plus the second step page must be fetched');
 
   for (const url of requestedUrls) {
@@ -80,10 +90,54 @@ try {
   }
   assert.equal(requestedUrls.filter((url) => url.searchParams.get('pageToken') === 'steps-page-2').length, 1);
 
-  console.log(JSON.stringify({ ok: true, suite: 'activity-reconciliation', requests: requestedUrls.length }, null, 2));
+  requestedUrls.length = 0;
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    requestedUrls.push(url);
+    const match = /\/dataTypes\/([^/]+)\/dataPoints:reconcile$/.exec(url.pathname);
+    assert.ok(match, `activity summary must use reconciliation, received ${url.pathname}`);
+    const type = decodeURIComponent(match[1]);
+    if (type === 'steps') return Response.json({ dataPoints: [], nextPageToken: 'repeated-token' });
+    return Response.json({ dataPoints: [] });
+  };
+  const repeatedToken = await client.get('/1/user/-/activities/date/2026-08-17.json');
+  assert.equal(repeatedToken.summary.steps, undefined);
+  assert.equal(repeatedToken.summary.dataCoverage.partial, true);
+  assert.deepEqual(repeatedToken.summary.dataCoverage.failedMetrics, ['steps']);
+  assert.equal(requestedUrls.filter((url) => url.pathname.includes('/steps/')).length, 2, 'a repeated page token must stop after two requests');
+  assert.ok(warnings.some((warning) => /repeated a page token for steps/.test(warning)));
+
+  requestedUrls.length = 0;
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    requestedUrls.push(url);
+    const match = /\/dataTypes\/([^/]+)\/dataPoints:reconcile$/.exec(url.pathname);
+    assert.ok(match, `activity summary must use reconciliation, received ${url.pathname}`);
+    const type = decodeURIComponent(match[1]);
+    if (type === 'basal-energy-burned') return Response.json({ error: { message: 'synthetic metric failure' } }, { status: 500 });
+    const response = responses[type];
+    assert.ok(response, `unexpected reconciled data type ${type}`);
+    if (type === 'steps') return Response.json(url.searchParams.has('pageToken') ? response.next : response.first);
+    return Response.json(response);
+  };
+  const partial = await client.get('/1/user/-/activities/date/2026-08-17.json');
+  assert.equal(partial.summary.steps, 2234, 'a failed calorie metric must not hide valid steps');
+  assert.equal(partial.summary.activeCalories, 200);
+  assert.equal(partial.summary.basalCalories, undefined);
+  assert.equal(partial.summary.caloriesOut, 200);
+  assert.equal(partial.summary.caloriesOutComplete, false);
+  assert.equal(partial.summary.dataCoverage.activity, true);
+  assert.equal(partial.summary.dataCoverage.partial, true);
+  assert.deepEqual(partial.summary.dataCoverage.failedMetrics, ['basal-energy-burned']);
+  assert.ok(warnings.some((warning) => /activity metric error \(basal-energy-burned\)/.test(warning)));
+
+  console.log(JSON.stringify({ ok: true, suite: 'activity-reconciliation', checks: 3 }, null, 2));
 } finally {
   globalThis.fetch = originalFetch;
+  process.stderr.write = originalStderrWrite;
   if (originalNoCache === undefined) delete process.env.FITBIT_NO_CACHE;
   else process.env.FITBIT_NO_CACHE = originalNoCache;
+  if (originalNoRetry === undefined) delete process.env.FITBIT_NO_RETRY;
+  else process.env.FITBIT_NO_RETRY = originalNoRetry;
   rmSync(dir, { recursive: true, force: true });
 }
