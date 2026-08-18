@@ -31,6 +31,8 @@ interface GooglePage {
   nextPageToken?: string;
 }
 
+const MAX_RECONCILE_PAGES = 100;
+
 const DAILY_TYPES = new Set([
   "daily-resting-heart-rate",
   "daily-heart-rate-zones",
@@ -181,11 +183,11 @@ export class FitbitClient {
 
   private async getActivityDay(date: string): Promise<unknown> {
     const types = ["steps", "active-energy-burned", "basal-energy-burned", "distance", "active-minutes", "activity-level"];
-    const pages = await Promise.all(types.map((type) => this.listDataPoints(type, {
+    const pages = await Promise.all(types.map((type) => this.collectReconciledDataPoints(type, {
       filter: dateFilter(type, date),
       pageSize: 10000
     })));
-    const byType = Object.fromEntries(types.map((type, index) => [type, pages[index].dataPoints ?? []]));
+    const byType = Object.fromEntries(types.map((type, index) => [type, pages[index]]));
     const hasSteps = byType.steps.length > 0;
     const hasActiveCalories = byType["active-energy-burned"].length > 0;
     const hasBasalCalories = byType["basal-energy-burned"].length > 0;
@@ -337,6 +339,33 @@ export class FitbitClient {
 
   private async listDataPoints(type: string, params: { filter?: string; pageSize?: number; pageToken?: string }): Promise<GooglePage> {
     return await this.requestGoogle(`/v4/users/me/dataTypes/${encodeURIComponent(type)}/dataPoints`, params) as GooglePage;
+  }
+
+  private async reconcileDataPoints(type: string, params: { filter?: string; pageSize?: number; pageToken?: string }): Promise<GooglePage> {
+    return await this.requestGoogle(`/v4/users/me/dataTypes/${encodeURIComponent(type)}/dataPoints:reconcile`, {
+      ...params,
+      dataSourceFamily: "users/me/dataSourceFamilies/all-sources"
+    }) as GooglePage;
+  }
+
+  private async collectReconciledDataPoints(type: string, params: { filter?: string; pageSize?: number }): Promise<unknown[]> {
+    const points: unknown[] = [];
+    const seenTokens = new Set<string>();
+    let pageToken: string | undefined;
+
+    for (let page = 0; page < MAX_RECONCILE_PAGES; page += 1) {
+      const response = await this.reconcileDataPoints(type, { ...params, pageToken });
+      points.push(...(response.dataPoints ?? []));
+      const nextPageToken = response.nextPageToken;
+      if (!nextPageToken) return points;
+      if (seenTokens.has(nextPageToken)) {
+        throw new Error(`Google Health reconciliation repeated a page token for ${type}`);
+      }
+      seenTokens.add(nextPageToken);
+      pageToken = nextPageToken;
+    }
+
+    throw new Error(`Google Health reconciliation exceeded ${MAX_RECONCILE_PAGES} pages for ${type}`);
   }
 
   private async requestGoogle(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<unknown> {

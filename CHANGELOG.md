@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fixed
+
+- Daily activity summaries now use Google Health's reconciled all-sources stream for steps, distance, active and basal calories, active minutes, and activity levels. This prevents overlapping Fitbit tracker, MobileTrack, Health Connect, and Google Fit records from being added together.
+- Reconciled activity queries now follow pagination, reject repeated page tokens, and have mixed-source regression coverage.
+
 ## 0.6.0 - 2026-08-05
 
 ### Added
