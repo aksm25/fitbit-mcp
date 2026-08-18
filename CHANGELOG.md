@@ -9,6 +9,14 @@
 ### CI
 
 - CI runs on main and Codex branches, pull requests, manual dispatch, and a weekly schedule. It executes the full regression suite plus a high-severity dependency audit.
+- The README contract test is now part of `npm test`, preventing documented
+  tools, prompts, and resources from drifting from the live MCP server.
+
+### Documentation
+
+- Added a development and maintenance runbook covering guardrails, test
+  locations and commands, manual checks, bug response, CI notifications,
+  deployment, rollback, and remaining operational controls.
 
 ## 0.6.0 - 2026-08-05
 

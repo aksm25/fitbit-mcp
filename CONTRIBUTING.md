@@ -15,6 +15,10 @@ CI runs the same gates on pushes to `main` and `codex/**`, pull requests to
 synthetic: never add Fitbit tokens, OAuth secrets, or personal health payloads
 to GitHub Actions.
 
+For the step-by-step development workflow, individual test commands, manual
+production checks, bug-response procedure, CI notifications, and rollback, see
+[the maintenance runbook](docs/maintenance.md).
+
 Guidelines:
 
 - Use only official Fitbit API endpoints.

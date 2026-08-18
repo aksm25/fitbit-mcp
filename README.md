@@ -132,10 +132,12 @@ This package uses the official Google Health API. Existing `fitbit_*` tool names
 
 **Start with these:**
 
+- `fitbit_quickstart`, `fitbit_onboarding`, `fitbit_demo` — guided setup and safe sample data
 - `fitbit_connection_status` — verify local setup before calling Fitbit
 - `fitbit_data_inventory` — inventory supported data domains, scopes, privacy modes and recommended first calls without calling Fitbit APIs.
 - `fitbit_daily_summary` — readiness, activity, sleep and heart context for today
 - `fitbit_weekly_summary` — scorecard, comparison vs prior week, next-week plan
+- `fitbit_wellness_context` — compact cross-domain wellness context for agents
 
 **Auth & diagnostics**
 
@@ -144,7 +146,7 @@ This package uses the official Google Health API. Existing `fitbit_*` tool names
 
 **Profile & devices**
 
-- `fitbit_get_profile`, `fitbit_list_devices`
+- `fitbit_get_profile`, `fitbit_profile_get`, `fitbit_profile_update`, `fitbit_list_devices`
 
 **Activity**
 
@@ -173,6 +175,7 @@ This package uses the official Google Health API. Existing `fitbit_*` tool names
 ## Resources
 
 - `fitbit://capabilities`, `fitbit://agent-manifest`
+- `fitbit://inventory`, `fitbit://profile`, `fitbit://latest/activity`
 - `fitbit://summary/daily`, `fitbit://summary/weekly`
 
 ## Privacy & security
@@ -229,10 +232,14 @@ See [the Cloudflare portal runbook](docs/remote-cloudflare.md) for the security 
 ```bash
 git clone https://github.com/davidmosiah/fitbit-mcp.git
 cd fitbit-mcp
-npm install
+npm ci
 npm test
-npm run build
+npm audit --audit-level=high
 ```
+
+See the [development, testing, and maintenance runbook](docs/maintenance.md)
+for the full workflow, guardrails, test inventory, manual production checks,
+bug-response procedure, CI notifications, and rollback steps.
 
 Test with MCP Inspector:
 
