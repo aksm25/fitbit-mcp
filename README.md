@@ -212,6 +212,12 @@ After Hermes config changes, use `/reload-mcp` or `hermes mcp test fitbit`. Don'
 
 If browser OAuth has to happen on a different machine than Hermes, run `auth` locally and copy `~/.fitbit-mcp/tokens.json` to the server with `chmod 600`.
 
+### Personal always-on portal
+
+This fork's home-server deployment is available to its owner through the managed-OAuth endpoint `https://fitbit-mcp.aksmain.com/mcp`. It keeps the local service on `127.0.0.1:8010`, protects the private origin with Cloudflare Access, and excludes OAuth repair, token revocation, and profile-update tools from remote clients.
+
+See [the Cloudflare portal runbook](docs/remote-cloudflare.md) for the security boundary, client setup, health checks, and credential-rotation procedure. Never configure a client with the private origin hostname or a Cloudflare service-token secret.
+
 ## Requirements
 
 - Node.js 20+
