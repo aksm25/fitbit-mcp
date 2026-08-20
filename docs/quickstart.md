@@ -1,8 +1,8 @@
 # Fitbit MCP Quickstart
 
-1. Create a Fitbit app at https://dev.fitbit.com/apps
-2. Set callback URL: `http://127.0.0.1:3000/callback`
-3. Use scopes: `activity heartrate profile settings sleep weight nutrition`
+1. Follow https://developers.google.com/health/setup to create a Google Cloud project and OAuth client.
+2. Set callback URL: `http://127.0.0.1:3000/callback`.
+3. Add your Google account as an OAuth test user while the app is in testing.
 4. Run:
 
 ```bash

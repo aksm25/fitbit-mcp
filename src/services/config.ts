@@ -30,7 +30,7 @@ export function getConfig(): FitbitConfig {
   if (missing.length > 0) {
     throw new Error(
       `Missing required FITBIT environment variables: ${missing.join(", ")}. ` +
-      "Create an app at https://dev.fitbit.com/apps and set these variables before using Fitbit tools."
+      "Create Google OAuth credentials by following https://developers.google.com/health/setup, then set these variables before using Fitbit tools."
     );
   }
 

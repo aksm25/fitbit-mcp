@@ -1,6 +1,8 @@
 # OAuth
 
-Create a Fitbit app at https://dev.fitbit.com/apps.
+Create a Google Cloud project and OAuth client by following:
+
+https://developers.google.com/health/setup
 
 Callback URL:
 
@@ -8,10 +10,15 @@ Callback URL:
 http://127.0.0.1:3000/callback
 ```
 
-Recommended scopes:
+The connector requests these read-only scope groups:
 
 ```text
-activity heartrate profile settings sleep weight nutrition
+googlehealth.activity_and_fitness.readonly
+googlehealth.health_metrics_and_measurements.readonly
+googlehealth.profile.readonly
+googlehealth.settings.readonly
+googlehealth.sleep.readonly
+googlehealth.nutrition.readonly
 ```
 
 Run:

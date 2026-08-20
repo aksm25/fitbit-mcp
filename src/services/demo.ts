@@ -52,6 +52,8 @@ function demoDailySummary() {
       date: DEMO_DATE,
       steps: 8420,
       calories_out: 2310,
+      calories_out_complete: true,
+      calories_out_note: undefined,
       active_minutes: 38,
       sedentary_minutes: 612,
       distance_km: 6.4,
@@ -59,6 +61,10 @@ function demoDailySummary() {
       sleep_minutes: 446,
       sleep_efficiency: 92,
       hrv_rmssd: 42.1,
+      has_activity_data: true,
+      has_sleep_data: true,
+      has_heart_data: true,
+      has_hrv_data: true,
       has_activity_error: false,
       has_sleep_error: false,
       has_heart_error: false,
@@ -75,7 +81,7 @@ function demoDailySummary() {
     safety: {
       medical_advice: false,
       api_boundary:
-        "Fitbit Web API provides processed activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
+        "Google Health API provides processed Fitbit activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
     }
   };
 }
@@ -102,7 +108,7 @@ function demoWellnessContext() {
 
 /**
  * Endpoint-passthrough shape shared by every date tool: the envelope is ours,
- * `data` is the Fitbit Web API payload after the privacy layer runs. Shown in
+ * `data` is the compatibility payload built from Google Health data after the privacy layer runs. Shown in
  * the default `structured` mode, which keeps the API keys and strips only
  * identifying/GPS fields.
  */
@@ -140,9 +146,9 @@ export function buildDemoPayload() {
     },
     notes: [
       "All sample data is synthetic; tagged with is_demo=true.",
-      "Real calls return live data from the Fitbit Web API after OAuth setup.",
-      "Summary tools return the shape above; date tools return { endpoint, privacy_mode, data } where data is the Fitbit API payload after redaction.",
-      "Some endpoints (e.g. intraday heart rate) may require Fitbit Developer app type approval."
+      "Real calls return live Fitbit data from the Google Health API after OAuth setup.",
+      "Summary tools return the shape above; date tools return { endpoint, privacy_mode, data } where data is normalized from Google Health after redaction.",
+      "Some data types depend on the Fitbit device, account, and Google Health permissions."
     ]
   };
 }

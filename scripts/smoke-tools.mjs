@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
@@ -20,7 +23,13 @@ const expectedResources = [
 const expectedPrompts = ['fitbit_daily_checkin', 'fitbit_intraday_investigation', 'fitbit_weekly_review'];
 
 const client = new Client({ name: 'fitbit-mcp-smoke-test', version: '0.0.0' });
-const transport = new StdioClientTransport({ command: 'node', args: ['dist/index.js'] });
+const smokeHome = mkdtempSync(join(tmpdir(), 'fitbit-mcp-smoke-'));
+const cleanEnv = Object.fromEntries(Object.entries(process.env).filter((entry) => entry[1] !== undefined));
+const transport = new StdioClientTransport({
+  command: 'node',
+  args: ['dist/index.js'],
+  env: { ...cleanEnv, HOME: smokeHome }
+});
 await client.connect(transport);
 try {
   const tools = await client.listTools();
@@ -64,4 +73,5 @@ try {
   console.log(JSON.stringify({ ok: true, tools: toolNames.length, resources: resourceUris.length, prompts: promptNames.length }, null, 2));
 } finally {
   await client.close();
+  rmSync(smokeHome, { recursive: true, force: true });
 }

@@ -28,12 +28,12 @@ async function latestActivityResource(uri: URL) {
 }
 
 async function dailySummaryResource(uri: URL) {
-  const summary = await buildDailySummary(new FitbitClient(getConfig()), { days: 7, timezone: "UTC" });
+  const summary = await buildDailySummary(new FitbitClient(getConfig()), { days: 7 });
   return textResource(uri, formatSummaryMarkdown(summary));
 }
 
 async function weeklySummaryResource(uri: URL) {
-  const summary = await buildWeeklySummary(new FitbitClient(getConfig()), { days: 7, compare_days: 7, timezone: "UTC" });
+  const summary = await buildWeeklySummary(new FitbitClient(getConfig()), { days: 7, compare_days: 7 });
   return textResource(uri, formatSummaryMarkdown(summary));
 }
 

@@ -12,7 +12,7 @@ For agent work on dense HR prefer **`fitbit_heart_series`** (`agent-safe-series/
 
 ## Does it provide raw sensor data?
 
-No raw accelerometer/device telemetry. `raw` mode means upstream Fitbit Web API JSON for supported endpoints.
+No raw accelerometer/device telemetry. `raw` mode means the least-transformed supported Google Health data available through the compatibility layer.
 
 ## Is it medical advice?
 

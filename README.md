@@ -37,8 +37,8 @@ Default is **stdio**. Optional Streamable HTTP — no session id, JSON responses
 
 ```bash
 npx -y fitbit-mcp-unofficial --http
-# GET  http://127.0.0.1:3000/health
-# POST http://127.0.0.1:3000/mcp   (sessionless)
+# GET  http://127.0.0.1:8010/health
+# POST http://127.0.0.1:8010/mcp   (sessionless)
 ```
 
 Env: `FITBIT_MCP_HOST`, `FITBIT_MCP_PORT`, `FITBIT_MCP_TRANSPORT=http`.
@@ -48,9 +48,9 @@ Env: `FITBIT_MCP_HOST`, `FITBIT_MCP_PORT`, `FITBIT_MCP_TRANSPORT=http`.
 
 **Local-first MCP server that connects AI agents to your Fitbit activity, sleep, heart-rate, HRV, SpO2 and weight data.**
 
-> **Unofficial project.** Not affiliated with, endorsed by or supported by Fitbit or Google. Use this only with your own Fitbit account and in line with the Fitbit Web API terms.
+> **Unofficial project.** Not affiliated with, endorsed by or supported by Fitbit or Google. Use this only with your own account and in line with the Google Health API terms.
 
-> **Platform migration risk:** Fitbit is migrating to the Google Health API. OAuth, base URL, scopes and reconnection flows may change in 2026. Treat any breakage as platform drift and check the [Fitbit Web API docs](https://dev.fitbit.com/build/reference/web-api/) before reporting it as a bug.
+> **Migration branch:** This version uses the new Google Health API. Old Fitbit Web API tokens are not transferable, so users must authorize once with Google.
 
 Built by [David Mosiah](https://github.com/davidmosiah) for people who use Claude, Cursor, Hermes, OpenClaw or other MCP-compatible agents to think about activity, sleep and heart context — without copy-pasting numbers from the Fitbit app.
 
@@ -60,13 +60,13 @@ Part of [Delx Wellness](https://github.com/davidmosiah/delx-wellness), a registr
 
 ## Why this exists
 
-Fitbit (now under Google) has years of wearable data — daily activity, sleep stages, intraday heart-rate, HRV, SpO2, breathing rate, weight, food and water logs. But its API uses OAuth 2.0 with per-scope authorization and intraday access that varies by app, and the platform is mid-migration to the Google Health API.
+Fitbit (now under Google) has years of wearable data — daily activity, sleep stages, intraday heart-rate, HRV, SpO2, breathing rate, weight, food and water logs. The legacy Fitbit Web API no longer accepts new apps, so this project reads that data through the Google Health API.
 
 This package handles the OAuth dance locally, normalizes responses, and exposes Fitbit through the Model Context Protocol. Tokens never leave your machine. Privacy-mode defaults keep raw payloads opt-in.
 
 ## Setup in 60 seconds
 
-You'll need a Fitbit app ([create one here](https://dev.fitbit.com/apps)) with redirect URI `http://127.0.0.1:3000/callback`.
+You'll need a Google Cloud project and OAuth client. Follow the [Google Health setup guide](https://developers.google.com/health/setup) and add redirect URI `http://127.0.0.1:3000/callback`.
 
 ```bash
 npx -y fitbit-mcp-unofficial setup    # interactive: paste client id + secret
@@ -74,11 +74,7 @@ npx -y fitbit-mcp-unofficial auth     # opens browser, captures the OAuth code
 npx -y fitbit-mcp-unofficial doctor   # verifies you're ready
 ```
 
-Recommended scopes:
-
-```text
-activity heartrate profile settings sleep weight nutrition
-```
+The setup command uses read-only Google Health scopes for activity, health metrics, profile, settings, sleep, and nutrition.
 
 Then add this to your MCP client config:
 
@@ -116,7 +112,7 @@ Don't claim anything Fitbit can't actually prove.
 
 ## Data availability
 
-This package uses the official Fitbit Web API. When this README says `raw`, it means the upstream Fitbit JSON for a supported endpoint — not raw device sensor streams.
+This package uses the official Google Health API. Existing `fitbit_*` tool names and familiar response shapes are retained for compatibility. `raw` never means raw device sensor streams.
 
 | Data | Available | Notes |
 |---|:---:|---|
@@ -124,22 +120,24 @@ This package uses the official Fitbit Web API. When this README says `raw`, it m
 | Activity logs | ✓ | Logged workouts |
 | Sleep + sleep stages | ✓ | When Fitbit returns stage data |
 | Resting heart rate + daily heart-rate zones | ✓ | All scored days |
-| Intraday heart-rate samples | conditional | Only when the Fitbit app/API access permits intraday |
+| Intraday heart-rate samples | conditional | Only when Google Health returns samples for the account |
 | HRV (overnight) | ✓ | When supported by device/account |
 | SpO2 (overnight) | ✓ | When supported by device/account |
 | Breathing rate | ✓ | When supported by device/account |
 | Weight + body composition | ✓ | When logged |
 | Food + water logs | ✓ | When logged |
-| Continuous device telemetry | — | Not exposed by Fitbit's public API |
+| Continuous device telemetry | — | Not exposed by the Google Health API |
 
 ## Tools
 
 **Start with these:**
 
+- `fitbit_quickstart`, `fitbit_onboarding`, `fitbit_demo` — guided setup and safe sample data
 - `fitbit_connection_status` — verify local setup before calling Fitbit
 - `fitbit_data_inventory` — inventory supported data domains, scopes, privacy modes and recommended first calls without calling Fitbit APIs.
 - `fitbit_daily_summary` — readiness, activity, sleep and heart context for today
 - `fitbit_weekly_summary` — scorecard, comparison vs prior week, next-week plan
+- `fitbit_wellness_context` — compact cross-domain wellness context for agents
 
 **Auth & diagnostics**
 
@@ -148,7 +146,7 @@ This package uses the official Fitbit Web API. When this README says `raw`, it m
 
 **Profile & devices**
 
-- `fitbit_get_profile`, `fitbit_list_devices`
+- `fitbit_get_profile`, `fitbit_profile_get`, `fitbit_profile_update`, `fitbit_list_devices`
 
 **Activity**
 
@@ -177,6 +175,7 @@ This package uses the official Fitbit Web API. When this README says `raw`, it m
 ## Resources
 
 - `fitbit://capabilities`, `fitbit://agent-manifest`
+- `fitbit://inventory`, `fitbit://profile`, `fitbit://latest/activity`
 - `fitbit://summary/daily`, `fitbit://summary/weekly`
 
 ## Privacy & security
@@ -198,7 +197,7 @@ FITBIT_CLIENT_SECRET=…
 FITBIT_REDIRECT_URI=http://127.0.0.1:3000/callback
 
 # Optional
-FITBIT_SCOPES="activity heartrate profile settings sleep weight nutrition"
+FITBIT_SCOPES="https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly https://www.googleapis.com/auth/googlehealth.profile.readonly https://www.googleapis.com/auth/googlehealth.settings.readonly https://www.googleapis.com/auth/googlehealth.sleep.readonly https://www.googleapis.com/auth/googlehealth.nutrition.readonly"
 FITBIT_PRIVACY_MODE=structured        # summary | structured | raw
 FITBIT_CACHE=sqlite                   # optional read-through cache
 ```
@@ -216,21 +215,31 @@ After Hermes config changes, use `/reload-mcp` or `hermes mcp test fitbit`. Don'
 
 If browser OAuth has to happen on a different machine than Hermes, run `auth` locally and copy `~/.fitbit-mcp/tokens.json` to the server with `chmod 600`.
 
+### Personal always-on portal
+
+This fork's home-server deployment is available to its owner through the managed-OAuth endpoint `https://fitbit-mcp.aksmain.com/mcp`. It keeps the local service on `127.0.0.1:8010`, protects the private origin with Cloudflare Access, and excludes OAuth repair, token revocation, and profile-update tools from remote clients.
+
+See [the Cloudflare portal runbook](docs/remote-cloudflare.md) for the security boundary, client setup, health checks, and credential-rotation procedure. Never configure a client with the private origin hostname or a Cloudflare service-token secret.
+
 ## Requirements
 
 - Node.js 20+
-- A Fitbit app at <https://dev.fitbit.com/apps> with redirect URI `http://127.0.0.1:3000/callback`
-- Intraday heart-rate access requires the Fitbit app to be approved for intraday data (varies per app)
+- A Google Cloud project with Google Health API access
+- A Google OAuth client with redirect URI `http://127.0.0.1:3000/callback`
 
 ## Development
 
 ```bash
 git clone https://github.com/davidmosiah/fitbit-mcp.git
 cd fitbit-mcp
-npm install
+npm ci
 npm test
-npm run build
+npm audit --audit-level=high
 ```
+
+See the [development, testing, and maintenance runbook](docs/maintenance.md)
+for the full workflow, guardrails, test inventory, manual production checks,
+bug-response procedure, CI notifications, and rollback steps.
 
 Test with MCP Inspector:
 
@@ -246,7 +255,9 @@ npx @modelcontextprotocol/inspector node dist/index.js
 - GitHub: <https://github.com/davidmosiah/fitbit-mcp>
 - Delx Wellness registry: <https://github.com/davidmosiah/delx-wellness>
 - Connector quality standard: <https://github.com/davidmosiah/delx-wellness/blob/main/docs/connector-quality-standard.md>
-- Fitbit Web API: <https://dev.fitbit.com/build/reference/web-api/>
+- Google Health setup: <https://developers.google.com/health/setup>
+- Google Health endpoints: <https://developers.google.com/health/endpoints>
+- Fitbit migration guide: <https://developers.google.com/health/migration>
 
 <!-- delx-wellness see-also -->
 

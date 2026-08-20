@@ -280,8 +280,8 @@ function buildOAuthScopeStatus(token: ConnectionStatus["token"]): ConnectionStat
     granted_scopes: grantedScopes,
     missing_recommended_scopes: missingRecommendedScopes,
     scope_status: missingRecommendedScopes.length === 0 ? "ok" : "missing_recommended",
-    activity_tools_ready: granted.has("activity"),
-    profile_tools_ready: granted.has("profile")
+    activity_tools_ready: granted.has("https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly"),
+    profile_tools_ready: granted.has("https://www.googleapis.com/auth/googlehealth.profile.readonly")
   };
 }
 
@@ -301,13 +301,13 @@ function buildNextSteps(input: {
   const steps: string[] = [];
   if (!input.nodeSupported) steps.push("Install Node.js 20 or newer.");
   for (const name of input.missingEnv) {
-    steps.push(`Set ${name}. Create a Fitbit app at https://dev.fitbit.com/apps if needed.`);
+    steps.push(`Set ${name}. Follow https://developers.google.com/health/setup to create Google OAuth credentials if needed.`);
   }
   if (input.redirectUri && !input.automaticAuthSupported) {
     steps.push("For one-command auth, set FITBIT_REDIRECT_URI to a local callback such as http://127.0.0.1:3000/callback.");
   }
   if (!input.token.exists) {
-    steps.push("Run `fitbit-mcp-server auth` to authorize Fitbit and save local tokens.");
+    steps.push("Run `fitbit-mcp-server auth` to authorize Google Health and save local tokens.");
   } else if (!input.token.readable) {
     steps.push(`Fix token file readability at ${input.token.path}.`);
   } else if (input.token.secure_permissions === false) {

@@ -28,25 +28,25 @@ export async function runAuthCommand(args: string[]): Promise<number> {
   const json = args.includes("--json");
   const config = getConfig();
   const redirect = parseLocalRedirectUri(config.redirectUri);
-  const state = randomBytes(4).toString("hex");
+  const state = randomBytes(32).toString("hex");
   const client = new FitbitClient(config);
   const authUrl = client.authUrl(state);
   const timeoutMs = Number(process.env.FITBIT_AUTH_TIMEOUT_MS ?? 300_000);
 
   const result = await waitForOAuthCode(redirect, state, timeoutMs, async (url) => {
     if (!json) {
-      console.log("Fitbit MCP · Authorization");
+      console.log("Fitbit MCP · Google Health Authorization");
       console.log("");
       if (noOpen) {
         console.log("Open this URL manually:");
         console.log(`  ${url}`);
       } else {
-        console.log("Opening Fitbit authorization in your browser...");
+        console.log("Opening Google Health authorization in your browser...");
       }
       console.log("");
       console.log("Steps");
       console.log("  1. Approve access in the browser tab that opens.");
-      console.log("  2. Fitbit will redirect to the local callback.");
+      console.log("  2. Google will redirect to the local callback.");
       console.log("  3. Tokens are saved locally; this command never prints them.");
       console.log("");
       console.log("Waiting for callback...");
@@ -65,7 +65,7 @@ export async function runAuthCommand(args: string[]): Promise<number> {
   if (json) console.log(JSON.stringify(output, null, 2));
   else {
     console.log("");
-    console.log("✓ Fitbit connected");
+    console.log("✓ Google Health connected");
     console.log("");
     console.log(`  Token file:  ${output.token_path}`);
     if (output.scope) console.log(`  Scope:       ${output.scope}`);
@@ -86,7 +86,7 @@ function waitForOAuthCode(
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       server.close();
-      reject(new Error("Timed out waiting for FITBIT OAuth callback."));
+      reject(new Error("Timed out waiting for Google OAuth callback."));
     }, timeoutMs);
 
     const server = createServer((req, res) => {
@@ -99,9 +99,9 @@ function waitForOAuthCode(
         const error = requestUrl.searchParams.get("error");
         const code = requestUrl.searchParams.get("code");
         const state = requestUrl.searchParams.get("state");
-        if (error) throw new Error(`Fitbit authorization failed: ${error}`);
-        if (!code) throw new Error("FITBIT callback did not include a code.");
-        if (state !== expectedState) throw new Error("FITBIT callback state mismatch.");
+        if (error) throw new Error(`Google Health authorization failed: ${error}`);
+        if (!code) throw new Error("Google OAuth callback did not include a code.");
+        if (state !== expectedState) throw new Error("Google OAuth callback state mismatch.");
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(successHtml());
         clearTimeout(timeout);
         server.close();
@@ -143,7 +143,7 @@ function successHtml(): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fitbit connected · Delx Wellness</title>
+  <title>Google Health connected · Delx Wellness</title>
   <style>
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
@@ -166,7 +166,7 @@ function successHtml(): string {
 </head>
 <body>
   <div class="check" aria-hidden="true">&check;</div>
-  <h1>Fitbit connected</h1>
+  <h1>Google Health connected</h1>
   <p class="lede">Tokens are saved locally with user-only permissions. Your MCP client never sees them.</p>
   <p class="step-label">What's next</p>
   <ol>

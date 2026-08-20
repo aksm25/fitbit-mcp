@@ -49,7 +49,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       binary: "fitbit-mcp-server"
     },
     oauth: {
-      provider: "Fitbit Web API",
+      provider: "Google Health API",
       redirect_uri: "http://127.0.0.1:3000/callback",
       scopes: DEFAULT_SCOPES,
       token_storage: "~/.fitbit-mcp/tokens.json with 0600 permissions",
@@ -74,22 +74,22 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       "Call fitbit_connection_status and fitbit_data_inventory before Fitbit data tools.",
       "If setup is incomplete, guide the user through setup, auth and doctor instead of guessing token state.",
       "Treat Fitbit health data as sensitive. Do not expose raw payloads unless the user asks for raw mode.",
-      "Intraday heart-rate data may require Fitbit app type/access; explain permission errors clearly.",
+      "Some Google Health data types depend on the user's device and account; explain missing data clearly.",
       "For Hermes, do not restart the gateway for normal Fitbit data access; reload MCP instead.",
       "Do not provide medical diagnosis or treatment instructions. Frame outputs as health/training context."
     ],
     troubleshooting: [
       { symptom: "missing FITBIT_CLIENT_ID / FITBIT_CLIENT_SECRET / FITBIT_REDIRECT_URI", action: "Run `fitbit-mcp-server setup` or set FITBIT_* env vars." },
       { symptom: "401 or expired token", action: "Run `fitbit-mcp-server auth` again; tokens refresh automatically when refresh_token is present." },
-      { symptom: "intraday endpoint forbidden", action: "Use daily heart endpoint or confirm Fitbit app type/access for intraday data." },
+      { symptom: "Google Health endpoint forbidden", action: "Re-authorize and confirm the Google Cloud project has the required Google Health scopes and test user." },
       { symptom: "Hermes configured but tools unavailable", action: "Run `/reload-mcp` or `hermes mcp test fitbit`; do not restart gateway for normal reload." }
     ],
     links: {
       github: "https://github.com/davidmosiah/fitbitmcp",
       docs: "https://fitbitmcp.vercel.app/",
       npm: "https://www.npmjs.com/package/fitbit-mcp-unofficial",
-      fitbit_apps: "https://dev.fitbit.com/apps",
-      fitbit_api_docs: "https://dev.fitbit.com/build/reference/web-api/"
+      google_health_setup: "https://developers.google.com/health/setup",
+      google_health_api_docs: "https://developers.google.com/health/endpoints"
     }
   };
 }

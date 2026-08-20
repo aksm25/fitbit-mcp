@@ -11,7 +11,7 @@ MCP command: fitbit-mcp-server
 - Read-only default tools: fitbit_agent_manifest, fitbit_capabilities, fitbit_privacy_audit, fitbit_connection_status, fitbit_data_inventory, fitbit_daily_summary, fitbit_weekly_summary, fitbit_cache_status.
 - OAuth env: FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REDIRECT_URI.
 - Optional env: FITBIT_TOKEN_PATH (token storage path), FITBIT_PRIVACY_MODE (summary|structured|raw, default structured), FITBIT_CACHE (true|sqlite to enable), FITBIT_CACHE_PATH.
-- Note: Google Health API v4 migration is underway — see google-health-mcp for the successor pathway.
+- Data provider: Google Health API v4. Existing fitbit_* tool names are retained for compatibility.
 - Prefer JSON responses for automation and markdown responses for human summaries.
-- Tokens stay local under ~/.fitbitmcp/tokens.json (or equivalent) and should never be printed.
+- Tokens stay local under ~/.fitbit-mcp/tokens.json (or equivalent) and should never be printed.
 - Not medical advice. Use as trend context only — outputs are operational context, not medical, legal or financial advice.

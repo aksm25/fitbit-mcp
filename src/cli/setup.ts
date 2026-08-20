@@ -83,8 +83,8 @@ async function parseSetupOptions(args: string[]): Promise<SetupOptions> {
 
   const answers = interactive ? await promptForMissing(flags) : flags;
   const client = parseAgentClientName(answers.get("client") ?? "generic");
-  const clientId = required(answers, "client-id", "Fitbit Client ID");
-  const clientSecret = required(answers, "client-secret", "Fitbit Client Secret");
+  const clientId = required(answers, "client-id", "Google OAuth Client ID");
+  const clientSecret = required(answers, "client-secret", "Google OAuth Client Secret");
   const redirectUri = answers.get("redirect-uri") ?? "http://127.0.0.1:3000/callback";
   const privacyMode = parsePrivacyMode(answers.get("privacy-mode") ?? "structured");
   const cache = answers.get("cache");
@@ -126,15 +126,15 @@ async function promptForMissing(flags: Map<string, string>): Promise<Map<string,
   const firstPrompt = createPromptInterface({ input, output });
   try {
     if (!merged.has("client")) merged.set("client", (await firstPrompt.question("MCP client (generic/claude/cursor/windsurf/hermes/openclaw) [generic]: ")).trim() || "generic");
-    if (!merged.has("client-id")) merged.set("client-id", (await firstPrompt.question("Fitbit Client ID: ")).trim());
+    if (!merged.has("client-id")) merged.set("client-id", (await firstPrompt.question("Google OAuth Client ID: ")).trim());
   } finally {
     firstPrompt.close();
   }
-  if (!merged.has("client-secret")) merged.set("client-secret", await promptHidden("Fitbit Client Secret: "));
+  if (!merged.has("client-secret")) merged.set("client-secret", await promptHidden("Google OAuth Client Secret: "));
 
   const secondPrompt = createPromptInterface({ input, output });
   try {
-    if (!merged.has("redirect-uri")) merged.set("redirect-uri", (await secondPrompt.question("Fitbit Redirect URI [http://127.0.0.1:3000/callback]: ")).trim() || "http://127.0.0.1:3000/callback");
+    if (!merged.has("redirect-uri")) merged.set("redirect-uri", (await secondPrompt.question("Google OAuth Redirect URI [http://127.0.0.1:3000/callback]: ")).trim() || "http://127.0.0.1:3000/callback");
     if (!merged.has("privacy-mode")) merged.set("privacy-mode", (await secondPrompt.question("Privacy mode (summary/structured/raw) [structured]: ")).trim() || "structured");
   } finally {
     secondPrompt.close();

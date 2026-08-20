@@ -1,7 +1,6 @@
 import type { FitbitClient } from "./fitbit-client.js";
+import { civilDateInTimeZone, shiftCivilDate, systemTimeZone } from "./civil-date.js";
 import { redactErrorMessage } from "./redaction.js";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -9,6 +8,7 @@ export interface SummaryOptions {
   days: number;
   compare_days?: number;
   timezone?: string;
+  now?: Date;
 }
 
 function isObject(value: unknown): value is UnknownRecord {
@@ -37,6 +37,11 @@ function sum(values: Array<number | undefined>): number {
   return values.reduce<number>((total, value) => total + (typeof value === "number" && Number.isFinite(value) ? value : 0), 0);
 }
 
+function sumPresent(values: Array<number | undefined>): number | undefined {
+  const nums = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return nums.length ? sum(nums) : undefined;
+}
+
 function avg(values: Array<number | undefined>): number | undefined {
   const nums = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   return nums.length ? sum(nums) / nums.length : undefined;
@@ -45,10 +50,6 @@ function avg(values: Array<number | undefined>): number | undefined {
 function percentDelta(current?: number, previous?: number): number | undefined {
   if (current === undefined || previous === undefined || previous === 0) return undefined;
   return ((current - previous) / previous) * 100;
-}
-
-function dateString(daysAgo = 0): string {
-  return new Date(Date.now() - daysAgo * DAY_MS).toISOString().slice(0, 10);
 }
 
 async function safeGet(client: Pick<FitbitClient, "get">, endpoint: string): Promise<unknown> {
@@ -75,6 +76,7 @@ async function dailyBundle(client: Pick<FitbitClient, "get">, date: string) {
 function dailyStats(bundle: Awaited<ReturnType<typeof dailyBundle>>) {
   const activity = isObject(bundle.activity) ? bundle.activity : {};
   const summary = isObject(activity.summary) ? activity.summary : {};
+  const activityCoverage = isObject(summary.dataCoverage) ? summary.dataCoverage : {};
   const sleep = isObject(bundle.sleep) ? bundle.sleep : {};
   const sleepSummary = isObject(sleep.summary) ? sleep.summary : {};
   const heart = isObject(bundle.heart) ? bundle.heart : {};
@@ -83,22 +85,44 @@ function dailyStats(bundle: Awaited<ReturnType<typeof dailyBundle>>) {
   const hrv = isObject(bundle.hrv) ? bundle.hrv : {};
   const hrvSeries = Array.isArray(hrv.hrv) ? hrv.hrv as UnknownRecord[] : [];
   const hrvValue = isObject(hrvSeries[0]?.value) ? hrvSeries[0].value as UnknownRecord : {};
+  const activityError = isObject(bundle.activity) && typeof bundle.activity.error === "string";
+  const sleepError = isObject(bundle.sleep) && typeof bundle.sleep.error === "string";
+  const heartError = isObject(bundle.heart) && typeof bundle.heart.error === "string";
+  const hrvError = isObject(bundle.hrv) && typeof bundle.hrv.error === "string";
+  const activeMinutes = sumPresent([num(summary, ["fairlyActiveMinutes"]), num(summary, ["veryActiveMinutes"])]);
+  const sleepRecords = num(sleepSummary, ["totalSleepRecords"]);
+  const hasActivityData = typeof activityCoverage.activity === "boolean"
+    ? activityCoverage.activity
+    : [num(summary, ["steps"]), num(summary, ["caloriesOut", "caloriesOutUnestimated"]), activeMinutes, firstDistanceKm(summary)].some((value) => value !== undefined);
+  const hasSleepData = sleepRecords !== undefined
+    ? sleepRecords > 0
+    : (Array.isArray(sleep.sleep) ? sleep.sleep.length > 0 : num(sleepSummary, ["totalMinutesAsleep"]) !== undefined);
+  const hasHeartData = num(heartValue, ["restingHeartRate"]) !== undefined;
+  const hasHrvData = num(hrvValue, ["rmssd"]) !== undefined;
 
   return {
     date: bundle.date,
     steps: num(summary, ["steps"]),
     calories_out: num(summary, ["caloriesOut", "caloriesOutUnestimated"]),
-    active_minutes: sum([num(summary, ["fairlyActiveMinutes"]), num(summary, ["veryActiveMinutes"])]),
+    active_minutes: activeMinutes,
     sedentary_minutes: num(summary, ["sedentaryMinutes"]),
     distance_km: firstDistanceKm(summary),
     resting_heart_rate: num(heartValue, ["restingHeartRate"]),
     sleep_minutes: num(sleepSummary, ["totalMinutesAsleep"]),
     sleep_efficiency: sleepSummary.efficiencyAverage ?? avgSleepEfficiency(sleep),
     hrv_rmssd: num(hrvValue, ["rmssd"]),
-    has_activity_error: isObject(bundle.activity) && typeof bundle.activity.error === "string",
-    has_sleep_error: isObject(bundle.sleep) && typeof bundle.sleep.error === "string",
-    has_heart_error: isObject(bundle.heart) && typeof bundle.heart.error === "string",
-    has_hrv_error: isObject(bundle.hrv) && typeof bundle.hrv.error === "string"
+    calories_out_complete: typeof summary.caloriesOutComplete === "boolean" ? summary.caloriesOutComplete : undefined,
+    calories_out_note: summary.caloriesOutComplete === false
+      ? "Partial calories: Google Health did not return both active and basal energy for this date."
+      : undefined,
+    has_activity_data: hasActivityData,
+    has_sleep_data: hasSleepData,
+    has_heart_data: hasHeartData,
+    has_hrv_data: hasHrvData,
+    has_activity_error: activityError,
+    has_sleep_error: sleepError,
+    has_heart_error: heartError,
+    has_hrv_error: hrvError
   };
 }
 
@@ -114,6 +138,7 @@ function avgSleepEfficiency(sleep: UnknownRecord): number | undefined {
 }
 
 function classifyReadiness(stats: ReturnType<typeof dailyStats>): string {
+  if (!stats.has_sleep_data || !stats.has_activity_data) return "insufficient_data";
   const sleepHours = (stats.sleep_minutes ?? 0) / 60;
   const active = stats.active_minutes ?? 0;
   if (sleepHours >= 7 && active <= 90) return "good_base";
@@ -126,6 +151,7 @@ function classifyReadiness(stats: ReturnType<typeof dailyStats>): string {
 function buildActions(stats: ReturnType<typeof dailyStats>, weekly?: ReturnType<typeof aggregateStats>): string[] {
   const actions: string[] = [];
   const state = classifyReadiness(stats);
+  if (state === "insufficient_data") actions.push("Not enough same-day activity and sleep data is available for a readiness suggestion yet.");
   if (state === "recovery_risk") actions.push("Keep intensity low today: sleep was short and activity load was meaningful.");
   if (state === "sleep_limited") actions.push("Prioritize sleep timing, light exposure and a lower-stimulation evening before adding training stress.");
   if (state === "high_load") actions.push("Protect joints and connective tissue: add mobility or zone 1/2 recovery before another hard day.");
@@ -139,7 +165,7 @@ function buildActions(stats: ReturnType<typeof dailyStats>, weekly?: ReturnType<
 function aggregateStats(days: ReturnType<typeof dailyStats>[]) {
   return {
     days: days.length,
-    total_steps: round(sum(days.map((day) => day.steps)), 0),
+    total_steps: round(sumPresent(days.map((day) => day.steps)), 0),
     avg_steps: round(avg(days.map((day) => day.steps)), 0),
     avg_active_minutes: round(avg(days.map((day) => day.active_minutes)), 0),
     avg_sleep_hours: round(avg(days.map((day) => day.sleep_minutes).map((minutes) => minutes === undefined ? undefined : minutes / 60)), 2),
@@ -151,52 +177,65 @@ function aggregateStats(days: ReturnType<typeof dailyStats>[]) {
 }
 
 export async function buildDailySummary(client: Pick<FitbitClient, "get">, options: SummaryOptions) {
-  const date = dateString(0);
+  const now = options.now ?? new Date();
+  const timezone = options.timezone ?? systemTimeZone();
+  const date = civilDateInTimeZone(timezone, now);
   const bundle = await dailyBundle(client, date);
   const stats = dailyStats(bundle);
   const readiness = classifyReadiness(stats);
 
   return {
     kind: "daily_summary" as const,
-    generated_at: new Date().toISOString(),
-    window: { date, days: options.days, timezone: options.timezone ?? "UTC" },
+    generated_at: now.toISOString(),
+    window: { date, days: options.days, timezone },
     data_quality: {
-      confidence: [stats.has_activity_error, stats.has_sleep_error, stats.has_heart_error].filter(Boolean).length === 0 ? "high" : "partial",
+      confidence: stats.has_activity_data && stats.has_sleep_data && !stats.has_activity_error && !stats.has_sleep_error
+        ? "high"
+        : stats.has_activity_data || stats.has_sleep_data || stats.has_heart_data || stats.has_hrv_data
+          ? "partial"
+          : "low",
       missing_or_failed: {
-        activity: stats.has_activity_error,
-        sleep: stats.has_sleep_error,
-        heart: stats.has_heart_error,
-        hrv: stats.has_hrv_error
+        activity: stats.has_activity_error || !stats.has_activity_data,
+        sleep: stats.has_sleep_error || !stats.has_sleep_data,
+        heart: stats.has_heart_error || !stats.has_heart_data,
+        hrv: stats.has_hrv_error || !stats.has_hrv_data
       }
     },
     scorecard: stats,
     diagnostic: {
       readiness_context: readiness,
-      primary_signal: readiness === "recovery_risk" ? "Load and sleep are misaligned; recovery discipline matters today." : "Use Fitbit trends as a practical readiness context, not a diagnosis.",
+      primary_signal: readiness === "insufficient_data"
+        ? "Same-day activity and sleep coverage is incomplete, so no readiness conclusion was generated."
+        : readiness === "recovery_risk"
+          ? "Load and sleep are misaligned; recovery discipline matters today."
+          : "Use Fitbit trends as a practical readiness context, not a diagnosis.",
       action_candidates: buildActions(stats)
     },
     safety: {
       medical_advice: false,
-      api_boundary: "Fitbit Web API provides processed activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
+      api_boundary: "Google Health API provides processed Fitbit activity, sleep, heart and body metrics; it does not provide raw accelerometer telemetry through this MCP."
     }
   };
 }
 
 export async function buildWeeklySummary(client: Pick<FitbitClient, "get">, options: SummaryOptions) {
+  const now = options.now ?? new Date();
+  const timezone = options.timezone ?? systemTimeZone();
+  const anchorDate = civilDateInTimeZone(timezone, now);
   const days = Math.max(options.days, 7);
   const compareDays = options.compare_days ?? 7;
-  const currentBundles = await Promise.all(Array.from({ length: days }, (_, index) => dailyBundle(client, dateString(index))));
+  const currentBundles = await Promise.all(Array.from({ length: days }, (_, index) => dailyBundle(client, shiftCivilDate(anchorDate, -index))));
   const current = currentBundles.map(dailyStats).reverse();
   const previous = compareDays > 0
-    ? (await Promise.all(Array.from({ length: compareDays }, (_, index) => dailyBundle(client, dateString(days + index))))).map(dailyStats).reverse()
+    ? (await Promise.all(Array.from({ length: compareDays }, (_, index) => dailyBundle(client, shiftCivilDate(anchorDate, -(days + index)))))).map(dailyStats).reverse()
     : [];
   const currentStats = aggregateStats(current);
   const previousStats = previous.length ? aggregateStats(previous) : undefined;
 
   return {
     kind: "weekly_summary" as const,
-    generated_at: new Date().toISOString(),
-    window: { days, compare_days: compareDays, timezone: options.timezone ?? "UTC" },
+    generated_at: now.toISOString(),
+    window: { start_date: current[0]?.date, end_date: current.at(-1)?.date, days, compare_days: compareDays, timezone },
     data_quality: {
       days_with_activity: current.filter((day) => day.steps !== undefined).length,
       days_with_sleep: currentStats.days_with_sleep,
@@ -233,6 +272,7 @@ export async function buildWeeklySummary(client: Pick<FitbitClient, "get">, opti
 }
 
 function classifyWeeklyLoad(stats: ReturnType<typeof aggregateStats>): string {
+  if (stats.avg_active_minutes === undefined || stats.avg_sleep_hours === undefined) return "insufficient_data";
   const active = stats.avg_active_minutes ?? 0;
   const sleep = stats.avg_sleep_hours ?? 0;
   if (active >= 90 && sleep < 6.5) return "high_load_low_sleep";

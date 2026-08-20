@@ -1,3 +1,30 @@
+## Unreleased
+
+### Fixed
+
+- Daily activity summaries now use Google Health's reconciled all-sources stream for steps, distance, active and basal calories, active minutes, and activity levels. This prevents overlapping Fitbit tracker, MobileTrack, Health Connect, and Google Fit records from being added together.
+- Reconciled activity queries now follow pagination, reject repeated page tokens, and have mixed-source regression coverage.
+- A failure in one activity metric no longer hides valid data from the other metrics; partial coverage and the failed metric names are reported without exposing private payloads.
+
+### CI
+
+- CI runs on main and Codex branches, pull requests, manual dispatch, and a weekly schedule. It executes the full regression suite plus a high-severity dependency audit.
+- The README contract test is now part of `npm test`, preventing documented
+  tools, prompts, and resources from drifting from the live MCP server.
+- GitHub actions are pinned to immutable commit SHAs, every workflow is
+  explicitly read-only and time-bounded, and pull requests receive a
+  high-severity dependency review.
+- The MCP scorecard is now a locked development dependency; CI no longer falls
+  back to `npm install` or downloads it at runtime with `npx`.
+- Added an automated workflow-security regression test and weekly grouped
+  Dependabot version checks.
+
+### Documentation
+
+- Added a development and maintenance runbook covering guardrails, test
+  locations and commands, manual checks, bug response, CI notifications,
+  deployment, rollback, and remaining operational controls.
+
 ## 0.6.0 - 2026-08-05
 
 ### Added

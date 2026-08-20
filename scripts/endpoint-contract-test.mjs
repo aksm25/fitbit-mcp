@@ -27,7 +27,9 @@ process.env.FITBIT_NO_CACHE = 'true';
 globalThis.fetch = async (input) => {
   const url = new URL(String(input));
   requestedUrls.push(url);
-  return Response.json({ activities: [{ logId: 123, activityName: 'Run' }] });
+  return Response.json({
+    dataPoints: [{ name: 'users/me/dataTypes/exercise/dataPoints/123', exercise: { exerciseType: 'RUNNING' } }],
+  });
 };
 
 try {
@@ -38,10 +40,10 @@ try {
   });
   try {
     const afterUrl = requestedUrls.at(-1);
-    assert.equal(afterUrl.searchParams.get('afterDate'), '2026-07-08');
-    assert.equal(afterUrl.searchParams.get('beforeDate'), null);
-    assert.equal(afterUrl.searchParams.get('sort'), 'asc');
-    assert.equal(afterResult.records[0].logId, 123);
+    assert.equal(afterUrl.pathname, '/v4/users/me/dataTypes/exercise/dataPoints');
+    assert.match(afterUrl.searchParams.get('filter'), /exercise\.interval\.civil_start_time >= "2026-07-08T00:00:00"/);
+    assert.equal(afterUrl.searchParams.get('pageSize'), '25');
+    assert.equal(afterResult.records[0].logId, '123');
   } catch (error) {
     failures.push(error);
   }
@@ -51,9 +53,7 @@ try {
   });
   try {
     const beforeUrl = requestedUrls.at(-1);
-    assert.equal(beforeUrl.searchParams.get('beforeDate'), '2026-07-15');
-    assert.equal(beforeUrl.searchParams.get('afterDate'), null);
-    assert.equal(beforeUrl.searchParams.get('sort'), 'desc');
+    assert.match(beforeUrl.searchParams.get('filter'), /exercise\.interval\.civil_start_time < "2026-07-15T00:00:00"/);
   } catch (error) {
     failures.push(error);
   }
@@ -66,7 +66,7 @@ try {
     try {
       await assert.rejects(
         client.list('/1/user/-/activities/list.json', params),
-        /Invalid Fitbit date cursor|Fitbit list accepts either after or before/,
+        /Invalid Fitbit date|accepts either after or before/,
       );
     } catch (error) {
       failures.push(error);
@@ -83,7 +83,11 @@ try {
     const url = new URL(String(input));
     requestedUrls.push(url);
     return Response.json({
-      activities: Array.from({ length: 20 }, (_, i) => ({ logId: 2000 + i, activityName: `Run ${i}` })),
+      dataPoints: Array.from({ length: 20 }, (_, i) => ({
+        name: `users/me/dataTypes/exercise/dataPoints/${2000 + i}`,
+        exercise: { exerciseType: 'RUNNING' },
+      })),
+      nextPageToken: 'next-token',
     });
   };
   try {
@@ -102,7 +106,11 @@ try {
     const url = new URL(String(input));
     requestedUrls.push(url);
     return Response.json({
-      activities: Array.from({ length: 20 }, (_, i) => ({ logId: 3000 + i, activityName: `Walk ${i}` })),
+      dataPoints: Array.from({ length: 20 }, (_, i) => ({
+        name: `users/me/dataTypes/exercise/dataPoints/${3000 + i}`,
+        exercise: { exerciseType: 'WALKING' },
+      })),
+      nextPageToken: `next-${requestedUrls.length}`,
     });
   };
   try {
@@ -117,7 +125,9 @@ try {
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
     requestedUrls.push(url);
-    return Response.json({ activities: [{ logId: 1, activityName: 'Partial' }] });
+    return Response.json({
+      dataPoints: [{ name: 'users/me/dataTypes/exercise/dataPoints/1', exercise: { exerciseType: 'WALKING' } }],
+    });
   };
   try {
     const partial = await client.list('/1/user/-/activities/list.json', { limit: 20, page: 1 });

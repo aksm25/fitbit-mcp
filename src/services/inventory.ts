@@ -77,7 +77,7 @@ export function buildDataInventory() {
     recommended_agent_flow: capabilities.recommended_agent_flow ?? [],
     links: capabilities.links ?? {},
     notes: [
-      "This inventory is static MCP metadata and does not call Fitbit APIs.",
+      "This inventory is static MCP metadata and does not call Google Health APIs.",
       "Call the connection status tool before live data tools to verify credentials and local token readiness.",
       "Use raw privacy mode only when the user explicitly requests upstream payloads."
     ]

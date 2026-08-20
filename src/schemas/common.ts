@@ -53,6 +53,7 @@ export const SimpleReadInputSchema = z.object({
 
 export const HeartSeriesInputSchema = z.object({
   date: z.string().default("today").describe("Date as yyyy-MM-dd or today. ISO date-times are reduced to the written calendar day."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used when date is today. Defaults to the server timezone."),
   detail_level: z.enum(["1sec", "1min", "5min", "15min"]).default("1min")
     .describe("Upstream Fitbit sample density. Series tool still enforces max_points server-side. Prefer 1min; 1sec needs personal/intraday access."),
   start_time: z.string().regex(/^\d{2}:\d{2}$/).optional().describe("Optional HH:mm window start (local Fitbit day)."),
@@ -147,13 +148,13 @@ export const ExchangeCodeInputSchema = z.object({
 
 export const DailySummaryInputSchema = z.object({
   days: z.number().int().min(1).max(30).default(7).describe("Lookback window for recent training context."),
-  timezone: z.string().min(1).max(80).default("UTC").describe("IANA timezone used only for display, e.g. America/New_York."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used to resolve today, e.g. America/New_York. Defaults to the server timezone."),
   response_format: ResponseFormatSchema
 }).strict();
 
 export const WellnessContextInputSchema = z.object({
   days: z.number().int().min(1).max(30).default(7).describe("Lookback window for normalized Fitbit wellness context."),
-  timezone: z.string().min(1).max(80).default("UTC").describe("IANA timezone used only for display, e.g. America/New_York."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used to resolve today. Defaults to the server timezone."),
   soreness: z.array(z.string().min(1).max(80)).default([]),
   injury_flags: z.array(z.string().min(1).max(120)).default([]),
   notes: z.string().max(500).optional(),
@@ -163,7 +164,7 @@ export const WellnessContextInputSchema = z.object({
 export const WeeklySummaryInputSchema = z.object({
   days: z.number().int().min(7).max(60).default(7).describe("Recent analysis window in days."),
   compare_days: z.number().int().min(0).max(60).default(7).describe("Prior comparison window in days. Use 0 to disable comparison."),
-  timezone: z.string().min(1).max(80).default("UTC").describe("IANA timezone used only for display, e.g. America/New_York."),
+  timezone: z.string().min(1).max(80).optional().describe("IANA timezone used to resolve the date window. Defaults to the server timezone."),
   response_format: ResponseFormatSchema
 }).strict();
 

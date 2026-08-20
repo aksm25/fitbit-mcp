@@ -7,12 +7,12 @@ export function buildCapabilities() {
     creator: { name: "David Mosiah", github: "https://github.com/davidmosiah" },
     unofficial: true,
     api_boundary: {
-      source: "Official Fitbit Web API with OAuth 2.0",
-      raw_definition: "Raw means the full JSON response returned by supported Fitbit Web API endpoints. Intraday heart rate is available only where the user's app/API access permits it.",
+      source: "Official Google Health API with OAuth 2.0",
+      raw_definition: "Raw means the full JSON response returned by supported Google Health API endpoints. Existing fitbit_* tool names are kept for compatibility.",
       does_not_include: [
         "raw accelerometer/device telemetry",
         "continuous unrestricted sensor streams",
-        "private Fitbit or Google endpoints",
+        "private or undocumented Google endpoints",
         "write/upload actions by default",
         "medical diagnosis or treatment guidance"
       ]
@@ -26,7 +26,7 @@ export function buildCapabilities() {
     privacy_modes: [
       { mode: "summary", use_when: "Default-safe interpretation with identifiers and profile details minimized." },
       { mode: "structured", use_when: "Normalized activity, sleep, heart and body metrics for agents." },
-      { mode: "raw", use_when: "The user explicitly needs upstream Fitbit payloads for debugging or deep analysis." }
+      { mode: "raw", use_when: "The user explicitly needs upstream Google Health payloads for debugging or deep analysis." }
     ],
     supported_data: [
       { name: "Profile and devices", examples: ["profile", "timezone", "units", "connected devices", "last sync"], tools: ["fitbit_get_profile", "fitbit_list_devices"] },
@@ -64,9 +64,9 @@ export function buildCapabilities() {
       github: "https://github.com/davidmosiah/fitbitmcp",
       docs: "https://fitbitmcp.vercel.app/",
       npm: "https://www.npmjs.com/package/fitbit-mcp-unofficial",
-      fitbit_api_docs: "https://dev.fitbit.com/build/reference/web-api/",
-      fitbit_auth_docs: "https://dev.fitbit.com/build/reference/web-api/developer-guide/authorization/",
-      fitbit_apps: "https://dev.fitbit.com/apps"
+      google_health_api_docs: "https://developers.google.com/health/endpoints",
+      google_health_auth_docs: "https://developers.google.com/health/setup",
+      google_health_migration_docs: "https://developers.google.com/health/migration"
     }
   };
 }
