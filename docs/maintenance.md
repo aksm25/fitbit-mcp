@@ -147,6 +147,54 @@ once from ChatGPT and Claude.
 
 Do not put the returned health values in a public pull request or issue.
 
+## Pull requests (PRs) in plain English
+
+A pull request is a proposal to copy the reviewed changes from a working branch
+into `main`. Opening a PR does **not** merge, deploy, or install the change. It
+creates a GitHub review page where the change and its automated checks can be
+examined before anything reaches `main`.
+
+This project opens PRs as **drafts** first. A draft cannot be merged. It becomes
+eligible for merging only after it is marked ready for review.
+
+The important PR sections are:
+
+- **Conversation** — the plain-English summary, testing evidence, risks, and
+  discussion.
+- **Commits** — the saved steps that make up the proposed change.
+- **Checks** — CI, dependency review, scorecard, and other automated results.
+- **Files changed** — the exact lines that would be added, changed, or removed.
+- **Merge status** — whether GitHub sees a blocker such as a failed check or
+  conflict.
+
+Use this review process:
+
+1. Confirm the base is `main` and the source is the intended feature branch.
+2. Read the summary: it should explain what changed, why, tests, security impact,
+   deployment, and rollback.
+3. Wait for every required check to finish. Do not merge a red, cancelled,
+   skipped unexpectedly, or still-running check.
+4. Give extra attention to changes in `package.json`, `package-lock.json`,
+   `.github/dependabot.yml`, and `.github/workflows/`. These can change what is
+   installed or what automated code is allowed to do.
+5. Check that no token, secret, private Fitbit value, profile detail, GPS data,
+   or local configuration appears in Conversation or Files changed.
+6. Resolve any review comments and rerun affected tests.
+7. Mark the PR ready only when the scope and checks are understood.
+8. Merge only with separate operator approval. Merging changes `main`; deployment
+   and the production smoke check happen afterward as a separate step.
+
+PR states mean:
+
+- **Draft** — shared for checks and review; cannot be merged.
+- **Open / ready for review** — review is requested, but nothing is merged yet.
+- **Merged** — the approved changes are now part of `main`.
+- **Closed** — the proposal was stopped without merging.
+
+If any workflow or dependency change is unclear, leave the PR as a draft and ask
+for a plain-English security review. GitHub's overview is available in
+[About pull requests](https://docs.github.com/en/pull-requests/get-started/about-pull-requests).
+
 ## Guardrails
 
 These rules apply to code, tests, CI, documentation, issue reports, and chat:
