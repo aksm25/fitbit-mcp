@@ -11,6 +11,13 @@
 - CI runs on main and Codex branches, pull requests, manual dispatch, and a weekly schedule. It executes the full regression suite plus a high-severity dependency audit.
 - The README contract test is now part of `npm test`, preventing documented
   tools, prompts, and resources from drifting from the live MCP server.
+- GitHub actions are pinned to immutable commit SHAs, every workflow is
+  explicitly read-only and time-bounded, and pull requests receive a
+  high-severity dependency review.
+- The MCP scorecard is now a locked development dependency; CI no longer falls
+  back to `npm install` or downloads it at runtime with `npx`.
+- Added an automated workflow-security regression test and weekly grouped
+  Dependabot version checks.
 
 ### Documentation
 

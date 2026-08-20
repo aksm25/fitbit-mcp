@@ -200,12 +200,57 @@ in the `scripts.test` entry of `package.json`.
 | Package and server metadata | `scripts/metadata-check.mjs` | `npm run test:metadata` |
 | HTTP retry behavior | `scripts/http-retry-test.mjs` | `npm run test:http-retry` |
 | HTTP response cache | `scripts/http-cache-test.mjs` | `npm run test:http-cache` |
+| GitHub workflow permissions and supply-chain guardrails | `scripts/workflow-security-test.mjs` | `npm run test:workflow-security` |
 | Everything above | `package.json` | `npm test` |
 | Known high-severity dependency vulnerabilities | `package-lock.json` | `npm audit --audit-level=high` |
 
 The scripts create temporary directories and synthetic responses. A regression
 test should be repeatable, must clean up its temporary data, and must not depend
 on the operator's account, network, current date, or tokens.
+
+## What gets installed and how dependency changes are approved
+
+`npm ci` installs exactly the versions and integrity hashes recorded in
+`package-lock.json`. GitHub installs them on a temporary runner that is deleted
+after the job. Running `npm ci` locally installs the same packages under this
+repo's `node_modules/` directory; it does not install a system-wide application.
+
+Dependencies in `package.json` have two roles:
+
+- `dependencies` are required when Fitbit MCP runs in production. The current
+  direct runtime packages provide MCP, SQLite storage, HTTP routing/CORS, and
+  schema validation.
+- `devDependencies` are used only to build, type-check, test, or score the
+  project. `mcp-scorecard` is quality tooling and is not needed by the running
+  Fitbit service.
+
+Useful inventory commands:
+
+```bash
+npm ls --omit=dev --depth=0
+npm ls --depth=0
+npm explain <package-name>
+npm audit --audit-level=high
+```
+
+A pull request that changes `package.json`, `package-lock.json`,
+`.github/dependabot.yml`, or `.github/workflows/` is a dependency/security
+change. Do not merge it until the review answers:
+
+1. Why is this package or action needed? Is it runtime-critical or development-only?
+2. Is it from the expected official publisher and repository?
+3. Is the version locked and represented in `package-lock.json` with integrity metadata?
+4. Does it introduce install scripts, a large transitive dependency tree, a new
+   license, secrets access, write permission, deployment, or network upload?
+5. Do the dependency review, `npm audit`, workflow-security test, and full test
+   suite pass?
+
+Dependabot opens reviewable pull requests for known security fixes and weekly
+version updates. High-severity dependency additions fail the pull-request
+dependency review. The workflow-security test fails if a workflow accesses
+secrets, requests write permission, uses a self-hosted runner, downloads code
+through `npx`, uses `npm install` instead of `npm ci`, or references an action
+without an immutable commit SHA.
 
 ## Manual production checks
 
