@@ -1,5 +1,10 @@
 ## Unreleased
 
+### Security
+
+- Update the existing dependency overrides to patched same-major releases of
+  fast-uri (3.1.8), hono (4.13.12), ip-address (10.7.3), and qs (6.16.0).
+
 ### Fixed
 
 - Daily activity summaries now use Google Health's reconciled all-sources stream for steps, distance, active and basal calories, active minutes, and activity levels. This prevents overlapping Fitbit tracker, MobileTrack, Health Connect, and Google Fit records from being added together.
@@ -24,6 +29,10 @@
 - Added a development and maintenance runbook covering guardrails, test
   locations and commands, manual checks, bug response, CI notifications,
   deployment, rollback, and remaining operational controls.
+
+## 0.6.3 - 2026-08-29
+
+Skill layer ships in-package (`skill/SKILL.md`). Agents can use MCP tools **or** `call <tool> --json` on the same binary; mutation gates stay identical.
 
 ## 0.6.0 - 2026-08-05
 
