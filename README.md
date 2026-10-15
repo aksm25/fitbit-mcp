@@ -241,6 +241,12 @@ See the [development, testing, and maintenance runbook](docs/maintenance.md)
 for the full workflow, guardrails, test inventory, manual production checks,
 bug-response procedure, CI notifications, and rollback steps.
 
+For the planned private household PWA, explained workout recommendation engine,
+multi-account privacy model, nutrition direction, and phased build, see the
+[Health+ product design](docs/product-design.md) and [roadmap](docs/roadmap.md).
+Health+ is future work in a separate application; Fitbit MCP remains the
+read-only connector.
+
 Test with MCP Inspector:
 
 ```bash

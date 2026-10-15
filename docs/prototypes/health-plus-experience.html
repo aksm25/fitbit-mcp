@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health+ experience prototype</title>
+</head>
+<body>
+<div id="fitbit-health-experience">
+  <style>
+    #fitbit-health-experience {
+      --hp-bg: light-dark(#f4f7f4, #0e1210);
+      --hp-panel: light-dark(#ffffff, #171c19);
+      --hp-panel-2: light-dark(#eef4ef, #202722);
+      --hp-text: light-dark(#172019, #edf5ef);
+      --hp-muted: light-dark(#617067, #aab7ae);
+      --hp-line: light-dark(#d9e2db, #303a33);
+      --hp-brand: light-dark(#246b45, #7bd8a2);
+      --hp-brand-ink: light-dark(#ffffff, #102016);
+      --hp-warm: light-dark(#9a5e18, #f0bd73);
+      --hp-info: light-dark(#285f86, #8bc7ef);
+      color: var(--hp-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      width: 100%;
+    }
+
+    #fitbit-health-experience * { box-sizing: border-box; }
+
+    #fitbit-health-experience .hp-shell {
+      background: var(--hp-bg);
+      border: 1px solid var(--hp-line);
+      border-radius: 18px;
+      overflow: hidden;
+      min-height: 600px;
+    }
+
+    #fitbit-health-experience .hp-topbar {
+      align-items: center;
+      background: var(--hp-panel);
+      border-bottom: 1px solid var(--hp-line);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 20px;
+    }
+
+    #fitbit-health-experience .hp-brand {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+    }
+
+    #fitbit-health-experience .hp-brand-mark {
+      align-items: center;
+      background: var(--hp-brand);
+      border-radius: 10px;
+      color: var(--hp-brand-ink);
+      display: flex;
+      font-weight: 500;
+      height: 32px;
+      justify-content: center;
+      width: 32px;
+    }
+
+    #fitbit-health-experience .hp-brand-name { font-weight: 500; }
+    #fitbit-health-experience .hp-kicker,
+    #fitbit-health-experience .hp-secondary,
+    #fitbit-health-experience .hp-source,
+    #fitbit-health-experience .hp-meta { color: var(--hp-muted); }
+
+    #fitbit-health-experience .hp-kicker,
+    #fitbit-health-experience .hp-source,
+    #fitbit-health-experience .hp-meta { font-size: 12px; }
+
+    #fitbit-health-experience .hp-layout {
+      display: grid;
+      grid-template-columns: 178px minmax(0, 1fr);
+    }
+
+    #fitbit-health-experience .hp-nav {
+      background: var(--hp-panel);
+      border-right: 1px solid var(--hp-line);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 16px 12px;
+    }
+
+    #fitbit-health-experience .hp-nav button,
+    #fitbit-health-experience .hp-action,
+    #fitbit-health-experience .hp-choice {
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    #fitbit-health-experience .hp-nav button {
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    #fitbit-health-experience .hp-nav button[aria-selected="true"] {
+      background: var(--hp-panel-2);
+      color: var(--hp-brand);
+      font-weight: 500;
+    }
+
+    #fitbit-health-experience .hp-main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    #fitbit-health-experience .hp-heading-row {
+      align-items: flex-start;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    #fitbit-health-experience h2,
+    #fitbit-health-experience h3,
+    #fitbit-health-experience p { margin: 0; }
+
+    #fitbit-health-experience h2 { font-size: 25px; font-weight: 500; }
+    #fitbit-health-experience h3 { font-size: 16px; font-weight: 500; }
+    #fitbit-health-experience .hp-secondary { margin-top: 6px; }
+
+    #fitbit-health-experience .hp-pill {
+      background: var(--hp-panel-2);
+      border-radius: 999px;
+      color: var(--hp-brand);
+      display: inline-block;
+      font-size: 12px;
+      padding: 6px 9px;
+      white-space: nowrap;
+    }
+
+    #fitbit-health-experience .hp-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #fitbit-health-experience .hp-panel {
+      background: var(--hp-panel);
+      border: 1px solid var(--hp-line);
+      border-radius: 13px;
+      padding: 16px;
+    }
+
+    #fitbit-health-experience .hp-panel.hp-span-2 { grid-column: span 2; }
+    #fitbit-health-experience .hp-panel.hp-span-3 { grid-column: 1 / -1; }
+
+    #fitbit-health-experience .hp-metric-value {
+      font-size: 26px;
+      font-weight: 500;
+      margin: 10px 0 4px;
+    }
+
+    #fitbit-health-experience .hp-list {
+      list-style: none;
+      margin: 14px 0 0;
+      padding: 0;
+    }
+
+    #fitbit-health-experience .hp-list li {
+      align-items: flex-start;
+      border-top: 1px solid var(--hp-line);
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      padding: 11px 0;
+    }
+
+    #fitbit-health-experience .hp-list li:first-child { border-top: 0; padding-top: 0; }
+    #fitbit-health-experience .hp-list li:last-child { padding-bottom: 0; }
+
+    #fitbit-health-experience .hp-list-main { min-width: 0; }
+    #fitbit-health-experience .hp-list-main strong { display: block; font-weight: 500; }
+    #fitbit-health-experience .hp-list-main span { color: var(--hp-muted); display: block; margin-top: 3px; }
+
+    #fitbit-health-experience .hp-status { color: var(--hp-brand); font-size: 12px; white-space: nowrap; }
+    #fitbit-health-experience .hp-status.hp-future { color: var(--hp-warm); }
+
+    #fitbit-health-experience .hp-action {
+      background: var(--hp-brand);
+      border: 0;
+      border-radius: 9px;
+      color: var(--hp-brand-ink);
+      font-weight: 500;
+      padding: 10px 13px;
+    }
+
+    #fitbit-health-experience .hp-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    #fitbit-health-experience .hp-choice {
+      background: transparent;
+      border: 1px solid var(--hp-line);
+      border-radius: 9px;
+      padding: 8px 11px;
+    }
+
+    #fitbit-health-experience .hp-choice[aria-pressed="true"] {
+      background: var(--hp-panel-2);
+      border-color: var(--hp-brand);
+      color: var(--hp-brand);
+    }
+
+    #fitbit-health-experience .hp-plan {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 14px;
+    }
+
+    #fitbit-health-experience .hp-plan-step {
+      background: var(--hp-panel-2);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    #fitbit-health-experience .hp-plan-step strong { display: block; font-weight: 500; }
+    #fitbit-health-experience .hp-plan-step span { color: var(--hp-muted); display: block; margin-top: 5px; }
+
+    #fitbit-health-experience .hp-bar {
+      background: var(--hp-line);
+      border-radius: 99px;
+      height: 7px;
+      margin-top: 11px;
+      overflow: hidden;
+    }
+
+    #fitbit-health-experience .hp-bar > span {
+      background: var(--hp-brand);
+      display: block;
+      height: 100%;
+    }
+
+    #fitbit-health-experience .hp-callout {
+      border-left: 3px solid var(--hp-info);
+      color: var(--hp-muted);
+      margin-top: 14px;
+      padding-left: 12px;
+    }
+
+    #fitbit-health-experience .hp-steps {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    #fitbit-health-experience .hp-step {
+      align-items: center;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+    }
+
+    #fitbit-health-experience .hp-step-num {
+      align-items: center;
+      background: var(--hp-panel-2);
+      border-radius: 50%;
+      display: flex;
+      height: 30px;
+      justify-content: center;
+      width: 30px;
+    }
+
+    #fitbit-health-experience .hp-detail-strip {
+      border-top: 1px solid var(--hp-line);
+      color: var(--hp-muted);
+      margin-top: 18px;
+      padding-top: 14px;
+    }
+
+    @media (max-width: 680px) {
+      #fitbit-health-experience .hp-layout { grid-template-columns: 1fr; }
+      #fitbit-health-experience .hp-nav {
+        border-bottom: 1px solid var(--hp-line);
+        border-right: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      #fitbit-health-experience .hp-nav button { text-align: center; }
+      #fitbit-health-experience .hp-main { padding: 18px; }
+      #fitbit-health-experience .hp-grid { grid-template-columns: 1fr; }
+      #fitbit-health-experience .hp-panel.hp-span-2,
+      #fitbit-health-experience .hp-panel.hp-span-3 { grid-column: auto; }
+      #fitbit-health-experience .hp-plan { grid-template-columns: 1fr; }
+      #fitbit-health-experience .hp-heading-row { flex-direction: column; }
+    }
+  </style>
+
+  <section class="hp-shell" aria-label="Proposed Fitbit Health experience">
+    <header class="hp-topbar">
+      <div class="hp-brand">
+        <div class="hp-brand-mark" aria-hidden="true">H+</div>
+        <div>
+          <div class="hp-brand-name">Health+</div>
+          <div class="hp-kicker">Your private health coach</div>
+        </div>
+      </div>
+      <div class="hp-meta">Demo member · Sample day</div>
+    </header>
+
+    <div class="hp-layout">
+      <nav class="hp-nav" aria-label="Health+ sections">
+        <button type="button" data-view="today" aria-selected="true">Today</button>
+        <button type="button" data-view="workout" aria-selected="false">Workout</button>
+        <button type="button" data-view="nutrition" aria-selected="false">Nutrition</button>
+        <button type="button" data-view="metrics" aria-selected="false">Metrics</button>
+        <button type="button" data-view="setup" aria-selected="false">Setup</button>
+      </nav>
+      <main class="hp-main" id="hp-view" aria-live="polite"></main>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const root = document.getElementById('fitbit-health-experience');
+      const view = root.querySelector('#hp-view');
+      const navButtons = Array.from(root.querySelectorAll('[data-view]'));
+      let workoutMode = 'balanced';
+
+      const views = {
+        today: () => `
+          <div class="hp-heading-row">
+            <div><h2>Good evening, Alex</h2><p class="hp-secondary">A clear daily view, with the source behind every recommendation.</p></div>
+            <span class="hp-pill">Fitbit synced</span>
+          </div>
+          <div class="hp-grid">
+            <section class="hp-panel">
+              <div class="hp-kicker">Activity</div>
+              <div class="hp-metric-value">6,420 <span class="hp-kicker">steps</span></div>
+              <div class="hp-source">Reconciled Fitbit total</div>
+            </section>
+            <section class="hp-panel">
+              <div class="hp-kicker">Recovery context</div>
+              <div class="hp-metric-value">Keep it light</div>
+              <div class="hp-source">Short sleep + low activity so far</div>
+            </section>
+            <section class="hp-panel">
+              <div class="hp-kicker">Data confidence</div>
+              <div class="hp-metric-value">Good</div>
+              <div class="hp-source">Missing metrics are shown, never guessed</div>
+            </section>
+            <section class="hp-panel hp-span-2">
+              <h3>Today’s suggested plan</h3>
+              <div class="hp-plan">
+                <div class="hp-plan-step"><strong>Move</strong><span>20-minute easy walk</span></div>
+                <div class="hp-plan-step"><strong>Train</strong><span>Light mobility or strength</span></div>
+                <div class="hp-plan-step"><strong>Recover</strong><span>Earlier wind-down tonight</span></div>
+              </div>
+            </section>
+            <section class="hp-panel">
+              <h3>Why this plan?</h3>
+              <ul class="hp-list">
+                <li><div class="hp-list-main"><strong>Activity</strong><span>Below your normal pace</span></div></li>
+                <li><div class="hp-list-main"><strong>Sleep</strong><span>Shorter than your baseline</span></div></li>
+              </ul>
+            </section>
+          </div>
+          <div class="hp-detail-strip">Every recommendation links back to the Fitbit signals used. Health guidance stays non-medical.</div>
+        `,
+
+        workout: () => {
+          const plans = {
+            recovery: { title: 'Recovery session', note: 'For low-energy or short-sleep days.', steps: [['Warm up','5 min mobility'],['Main','15 min easy walk'],['Finish','5 min breathing']] },
+            balanced: { title: 'Balanced session', note: 'A moderate plan that respects today’s recovery context.', steps: [['Warm up','5 min mobility'],['Main','3 × easy strength circuit'],['Finish','10 min walk']] },
+            challenge: { title: 'Challenge session', note: 'Shown only when trends support more load.', steps: [['Warm up','8 min dynamic'],['Main','4 × strength circuit'],['Finish','10 min easy cardio']] }
+          };
+          const plan = plans[workoutMode];
+          return `
+            <div class="hp-heading-row">
+              <div><h2>Workout recommendation</h2><p class="hp-secondary">A plan you can adjust, with the reason kept visible.</p></div>
+              <span class="hp-pill">No automatic medical decisions</span>
+            </div>
+            <section class="hp-panel">
+              <h3>Choose today’s intent</h3>
+              <div class="hp-choices" role="group" aria-label="Workout intent">
+                ${['recovery','balanced','challenge'].map(mode => `<button type="button" class="hp-choice" data-workout="${mode}" aria-pressed="${workoutMode === mode}">${mode[0].toUpperCase() + mode.slice(1)}</button>`).join('')}
+              </div>
+            </section>
+            <div class="hp-grid" style="margin-top:14px">
+              <section class="hp-panel hp-span-2">
+                <h3>${plan.title}</h3>
+                <p class="hp-secondary">${plan.note}</p>
+                <div class="hp-plan">
+                  ${plan.steps.map(step => `<div class="hp-plan-step"><strong>${step[0]}</strong><span>${step[1]}</span></div>`).join('')}
+                </div>
+              </section>
+              <section class="hp-panel">
+                <h3>Inputs used</h3>
+                <ul class="hp-list">
+                  <li><div class="hp-list-main"><strong>Sleep trend</strong><span>Recent duration and efficiency</span></div></li>
+                  <li><div class="hp-list-main"><strong>Activity load</strong><span>Reconciled steps and active minutes</span></div></li>
+                  <li><div class="hp-list-main"><strong>Your preferences</strong><span>Time, equipment, limitations</span></div></li>
+                </ul>
+              </section>
+            </div>
+            <div class="hp-detail-strip">You approve the plan; Health+ never writes a workout or changes your Fitbit account automatically.</div>
+          `;
+        },
+
+        nutrition: () => `
+          <div class="hp-heading-row">
+            <div><h2>Nutrition & metabolic context</h2><p class="hp-secondary">Add context gradually instead of building a giant food tracker on day one.</p></div>
+            <span class="hp-pill">Future phase</span>
+          </div>
+          <div class="hp-grid">
+            <section class="hp-panel hp-span-2">
+              <h3>Connected sources</h3>
+              <ul class="hp-list">
+                <li><div class="hp-list-main"><strong>Fitbit nutrition</strong><span>Meals, water and available calorie logs</span></div><span class="hp-status">Available</span></li>
+                <li><div class="hp-list-main"><strong>Meal journal</strong><span>Fast photo or text-based logging</span></div><span class="hp-status hp-future">Planned</span></li>
+                <li><div class="hp-list-main"><strong>CGM / glucose</strong><span>Optional trend context with stronger safety controls</span></div><span class="hp-status hp-future">Later</span></li>
+                <li><div class="hp-list-main"><strong>Labs and medications</strong><span>Only with explicit permission and clinical guardrails</span></div><span class="hp-status hp-future">Later</span></li>
+              </ul>
+            </section>
+            <section class="hp-panel">
+              <h3>What you would get</h3>
+              <ul class="hp-list">
+                <li><div class="hp-list-main"><strong>Meal timing</strong><span>Matched to training and sleep</span></div></li>
+                <li><div class="hp-list-main"><strong>Hydration nudges</strong><span>Based on activity and weather context</span></div></li>
+                <li><div class="hp-list-main"><strong>Trend explanations</strong><span>Patterns, not diagnoses</span></div></li>
+              </ul>
+            </section>
+          </div>
+          <div class="hp-detail-strip">Sensitive metabolic sources stay optional, separately connected, and revocable.</div>
+        `,
+
+        metrics: () => `
+          <div class="hp-heading-row">
+            <div><h2>Metrics with provenance</h2><p class="hp-secondary">See what is available, what is missing, and which device supplied it.</p></div>
+            <span class="hp-pill">Read-only</span>
+          </div>
+          <div class="hp-grid">
+            <section class="hp-panel hp-span-3">
+              <h3>Fitbit coverage</h3>
+              <ul class="hp-list">
+                <li><div class="hp-list-main"><strong>Activity</strong><span>Steps, distance, calories, active minutes and workouts</span></div><span class="hp-status">Reconciled</span></li>
+                <li><div class="hp-list-main"><strong>Recovery</strong><span>Sleep stages, resting heart rate and HRV</span></div><span class="hp-status">Available</span></li>
+                <li><div class="hp-list-main"><strong>Health measurements</strong><span>SpO₂, breathing rate and weight when present</span></div><span class="hp-status">Available</span></li>
+                <li><div class="hp-list-main"><strong>Next Fitbit metrics</strong><span>Goals, temperature and subscription events</span></div><span class="hp-status hp-future">Roadmap</span></li>
+              </ul>
+            </section>
+            <section class="hp-panel hp-span-2">
+              <h3>Data quality</h3>
+              <p class="hp-secondary">Overlapping tracker, MobileTrack, Health Connect and Google Fit records are reconciled before totals are shown.</p>
+              <div class="hp-bar" role="progressbar" aria-label="Data coverage" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"><span style="width:82%"></span></div>
+            </section>
+            <section class="hp-panel">
+              <h3>Source example</h3>
+              <div class="hp-metric-value">6,420</div>
+              <div class="hp-source">Example wearable · Sample day · reconciled</div>
+            </section>
+          </div>
+        `,
+
+        setup: () => `
+          <div class="hp-heading-row">
+            <div><h2>Setup that feels simple</h2><p class="hp-secondary">One guided path; advanced details stay out of the way.</p></div>
+            <span class="hp-pill">About 3 minutes</span>
+          </div>
+          <section class="hp-panel">
+            <div class="hp-steps">
+              <div class="hp-step"><div class="hp-step-num">1</div><div><h3>Connect Fitbit</h3><p class="hp-secondary">Secure member sign-in; read-only by default.</p></div><span class="hp-status">Done</span></div>
+              <div class="hp-step"><div class="hp-step-num">2</div><div><h3>Choose your goals</h3><p class="hp-secondary">Energy, sleep, strength, weight or general health.</p></div><button type="button" class="hp-action" data-demo-action>Continue</button></div>
+              <div class="hp-step"><div class="hp-step-num">3</div><div><h3>Add optional context</h3><p class="hp-secondary">Equipment, injuries, nutrition preferences and future metabolic sources.</p></div><span class="hp-status hp-future">Optional</span></div>
+            </div>
+            <div class="hp-callout" id="hp-setup-note">The technical Cloudflare, OAuth and MCP setup stays behind the scenes.</div>
+          </section>
+          <div class="hp-detail-strip">After setup, the same Health+ experience works from ChatGPT, Claude and a future standalone dashboard.</div>
+        `
+      };
+
+      function bindLocalActions() {
+        root.querySelectorAll('[data-workout]').forEach(button => {
+          button.addEventListener('click', () => {
+            workoutMode = button.dataset.workout;
+            render('workout');
+          });
+        });
+        const demoAction = root.querySelector('[data-demo-action]');
+        if (demoAction) {
+          demoAction.addEventListener('click', () => {
+            const note = root.querySelector('#hp-setup-note');
+            note.textContent = 'Next screen: pick one primary goal, then confirm workout preferences. Everything else can wait.';
+            demoAction.textContent = 'Goal step previewed';
+            demoAction.disabled = true;
+          });
+        }
+      }
+
+      function render(name) {
+        navButtons.forEach(button => button.setAttribute('aria-selected', String(button.dataset.view === name)));
+        view.innerHTML = views[name]();
+        bindLocalActions();
+      }
+
+      navButtons.forEach(button => button.addEventListener('click', () => render(button.dataset.view)));
+      render('today');
+    })();
+  </script>
+</div>
+</body>
+</html>

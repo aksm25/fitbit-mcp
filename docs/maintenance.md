@@ -467,25 +467,26 @@ for private health data.
 | Quarterly | Update dependencies on a branch, run the full suite, and practice a rollback |
 | Before August 17, 2027 | Rotate the Cloudflare Access service token using the remote portal runbook |
 
-## Remaining gaps to close
+## Operations status and remaining gaps
 
-The code regression process is covered, but a dependable always-on service also
-needs these operational controls:
+The code regression process is covered. CI is active on the default branch, and
+the active `Protect main with reviewed CI` ruleset requires a pull request,
+strict regression/dependency/scorecard checks, linear history, and resolved
+review threads while blocking deletion and force pushes. Dependabot alerts,
+security updates, secret scanning, and push protection are also active.
 
-1. **Activate CI on the default branch.** Until `.github/workflows/ci.yml` is
-   pushed and merged to `main`, the weekly schedule and notifications are not
-   active.
-2. **Enable branch protection.** This turns “CI should pass” into an enforced
-   merge rule.
-3. **Add private uptime alerts.** Monitor the local service and authenticated
+The remaining always-on operational controls are:
+
+1. **Add private uptime alerts.** Monitor the local service and authenticated
    portal from a trusted system. GitHub Actions cannot see most runtime failures.
-4. **Choose an incident channel and owner.** Decide who receives alerts and how
+2. **Choose an incident channel and owner.** Decide who receives alerts and how
    quickly privacy, outage, and data-correctness failures should be handled.
-5. **Test recovery.** Practice Google reauthorization, Cloudflare credential
+3. **Test recovery.** Practice Google reauthorization, Cloudflare credential
    rotation, and rollback before an emergency.
-6. **Define releases.** Tag known-good production commits and record deployment
+4. **Define releases.** Tag known-good production commits and record deployment
    dates so rollback targets are unambiguous.
 
-These are the main items that were missing from a complete SDLC/CI-CD lifecycle.
-The first two should be done next; uptime alerting should follow once the remote
-service is stable.
+The future Health+ dashboard, account-isolation model, mobile experience, and
+recommendation-engine safety boundary are specified in the
+[Health+ product design](product-design.md). They are future application work,
+not part of the running Fitbit connector.

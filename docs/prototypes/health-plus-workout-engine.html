@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health+ workout engine prototype</title>
+</head>
+<body>
+<div id="workout-engine-blueprint">
+  <style>
+    #workout-engine-blueprint {
+      --wo-bg: light-dark(#f5f7f9, #121419);
+      --wo-surface: light-dark(#ffffff, #1b1e25);
+      --wo-surface-2: light-dark(#eef2f6, #242832);
+      --wo-text: light-dark(#17202b, #edf1f7);
+      --wo-muted: light-dark(#657181, #a8b0bd);
+      --wo-line: light-dark(#d9e0e8, #343a46);
+      --wo-blue: light-dark(#2d64da, #78a4ff);
+      --wo-blue-ink: light-dark(#ffffff, #0d1932);
+      --wo-green: light-dark(#247b52, #75d6a6);
+      --wo-amber: light-dark(#8e641b, #e8bd6f);
+      color: var(--wo-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      width: 100%;
+    }
+
+    #workout-engine-blueprint * { box-sizing: border-box; }
+
+    #workout-engine-blueprint .wo-app {
+      background: var(--wo-bg);
+      border: 1px solid var(--wo-line);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    #workout-engine-blueprint .wo-header {
+      align-items: center;
+      background: var(--wo-surface);
+      border-bottom: 1px solid var(--wo-line);
+      display: flex;
+      gap: 20px;
+      justify-content: space-between;
+      padding: 16px 20px;
+    }
+
+    #workout-engine-blueprint .wo-brand { font-weight: 500; }
+    #workout-engine-blueprint .wo-brand span { color: var(--wo-blue); }
+    #workout-engine-blueprint .wo-status { color: var(--wo-green); font-size: 12px; }
+
+    #workout-engine-blueprint .wo-tabs {
+      display: flex;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    #workout-engine-blueprint button,
+    #workout-engine-blueprint select {
+      color: inherit;
+      font: inherit;
+    }
+
+    #workout-engine-blueprint button { cursor: pointer; }
+
+    #workout-engine-blueprint .wo-tab {
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 11px;
+      white-space: nowrap;
+    }
+
+    #workout-engine-blueprint .wo-tab[aria-selected="true"] {
+      background: var(--wo-surface-2);
+      color: var(--wo-blue);
+      font-weight: 500;
+    }
+
+    #workout-engine-blueprint .wo-main { padding: 22px; }
+    #workout-engine-blueprint h2,
+    #workout-engine-blueprint h3,
+    #workout-engine-blueprint p { margin: 0; }
+    #workout-engine-blueprint h2 { font-size: 24px; font-weight: 500; }
+    #workout-engine-blueprint h3 { font-size: 16px; font-weight: 500; }
+    #workout-engine-blueprint .wo-sub { color: var(--wo-muted); margin-top: 6px; }
+    #workout-engine-blueprint .wo-small { color: var(--wo-muted); font-size: 12px; }
+
+    #workout-engine-blueprint .wo-title-row {
+      align-items: flex-start;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    #workout-engine-blueprint .wo-badge {
+      background: var(--wo-surface-2);
+      border-radius: 999px;
+      color: var(--wo-green);
+      font-size: 12px;
+      padding: 6px 9px;
+      white-space: nowrap;
+    }
+
+    #workout-engine-blueprint .wo-builder {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    }
+
+    #workout-engine-blueprint .wo-panel {
+      background: var(--wo-surface);
+      border: 1px solid var(--wo-line);
+      border-radius: 13px;
+      padding: 16px;
+    }
+
+    #workout-engine-blueprint .wo-controls {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+
+    #workout-engine-blueprint .wo-fitbit-context {
+      background: var(--wo-surface);
+      border: 1px solid var(--wo-line);
+      border-radius: 13px;
+      margin-bottom: 14px;
+      padding: 16px;
+    }
+
+    #workout-engine-blueprint .wo-context-head {
+      align-items: flex-start;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+    }
+
+    #workout-engine-blueprint .wo-day-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 13px;
+    }
+
+    #workout-engine-blueprint .wo-day-choice {
+      background: transparent;
+      border: 1px solid var(--wo-line);
+      border-radius: 999px;
+      padding: 7px 11px;
+    }
+
+    #workout-engine-blueprint .wo-day-choice[aria-pressed="true"] {
+      background: var(--wo-surface-2);
+      border-color: var(--wo-blue);
+      color: var(--wo-blue);
+    }
+
+    #workout-engine-blueprint .wo-signal-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-top: 13px;
+    }
+
+    #workout-engine-blueprint .wo-signal {
+      background: var(--wo-surface-2);
+      border-radius: 9px;
+      min-width: 0;
+      padding: 10px;
+    }
+
+    #workout-engine-blueprint .wo-signal span {
+      color: var(--wo-muted);
+      display: block;
+      font-size: 11px;
+    }
+
+    #workout-engine-blueprint .wo-signal strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    #workout-engine-blueprint .wo-field label {
+      color: var(--wo-muted);
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    #workout-engine-blueprint .wo-field select {
+      background: var(--wo-surface-2);
+      border: 1px solid var(--wo-line);
+      border-radius: 9px;
+      padding: 9px 10px;
+      width: 100%;
+    }
+
+    #workout-engine-blueprint .wo-body-map {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 14px;
+    }
+
+    #workout-engine-blueprint .wo-figure {
+      align-items: center;
+      background: var(--wo-surface-2);
+      border-radius: 11px;
+      display: flex;
+      flex-direction: column;
+      min-height: 245px;
+      padding: 12px;
+    }
+
+    #workout-engine-blueprint .wo-figure svg { height: 190px; max-width: 150px; width: 100%; }
+    #workout-engine-blueprint .wo-body-base { fill: none; stroke: var(--wo-muted); stroke-linecap: round; stroke-width: 16; }
+    #workout-engine-blueprint .wo-muscle { fill: var(--wo-blue); opacity: .92; }
+    #workout-engine-blueprint .wo-secondary-muscle { fill: var(--wo-amber); opacity: .78; }
+
+    #workout-engine-blueprint .wo-routine-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    #workout-engine-blueprint .wo-exercise {
+      align-items: center;
+      background: var(--wo-surface-2);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      padding: 11px 12px;
+    }
+
+    #workout-engine-blueprint .wo-exercise:first-child { border-color: var(--wo-blue); }
+    #workout-engine-blueprint .wo-exercise strong { display: block; font-weight: 500; }
+    #workout-engine-blueprint .wo-exercise span { color: var(--wo-muted); display: block; font-size: 12px; margin-top: 3px; }
+    #workout-engine-blueprint .wo-set { min-width: 42px; text-align: right; }
+    #workout-engine-blueprint .wo-set strong { font-size: 14px; }
+
+    #workout-engine-blueprint .wo-source-line {
+      border-top: 1px solid var(--wo-line);
+      color: var(--wo-muted);
+      margin-top: 14px;
+      padding-top: 12px;
+    }
+
+    #workout-engine-blueprint .wo-rationale {
+      background: var(--wo-surface-2);
+      border-left: 3px solid var(--wo-blue);
+      border-radius: 0 9px 9px 0;
+      margin-top: 14px;
+      padding: 11px 12px;
+    }
+
+    #workout-engine-blueprint .wo-rationale strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    #workout-engine-blueprint .wo-rationale p { color: var(--wo-muted); font-size: 13px; }
+
+    #workout-engine-blueprint .wo-flow {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    #workout-engine-blueprint .wo-flow-node {
+      background: var(--wo-surface);
+      border: 1px solid var(--wo-line);
+      border-radius: 12px;
+      min-height: 132px;
+      padding: 14px;
+      position: relative;
+    }
+
+    #workout-engine-blueprint .wo-flow-node:not(:last-child)::after {
+      color: var(--wo-blue);
+      content: "→";
+      font-size: 22px;
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
+    #workout-engine-blueprint .wo-flow-node strong { display: block; font-weight: 500; }
+    #workout-engine-blueprint .wo-flow-node p { color: var(--wo-muted); margin-top: 8px; }
+    #workout-engine-blueprint .wo-flow-node em { color: var(--wo-green); display: block; font-size: 12px; font-style: normal; margin-top: 10px; }
+
+    #workout-engine-blueprint .wo-privacy {
+      border-left: 3px solid var(--wo-green);
+      color: var(--wo-muted);
+      margin-top: 16px;
+      padding-left: 12px;
+    }
+
+    #workout-engine-blueprint .wo-host-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    #workout-engine-blueprint .wo-host-choice {
+      background: transparent;
+      border: 1px solid var(--wo-line);
+      border-radius: 9px;
+      padding: 9px 12px;
+    }
+
+    #workout-engine-blueprint .wo-host-choice[aria-pressed="true"] {
+      background: var(--wo-surface-2);
+      border-color: var(--wo-blue);
+      color: var(--wo-blue);
+    }
+
+    #workout-engine-blueprint .wo-host-map {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #workout-engine-blueprint .wo-host-column {
+      background: var(--wo-surface);
+      border: 1px solid var(--wo-line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    #workout-engine-blueprint .wo-host-column ul { list-style: none; margin: 12px 0 0; padding: 0; }
+    #workout-engine-blueprint .wo-host-column li { border-top: 1px solid var(--wo-line); padding: 9px 0; }
+    #workout-engine-blueprint .wo-host-column li:first-child { border-top: 0; padding-top: 0; }
+    #workout-engine-blueprint .wo-host-column li:last-child { padding-bottom: 0; }
+    #workout-engine-blueprint .wo-host-column li span { color: var(--wo-muted); display: block; font-size: 12px; margin-top: 3px; }
+
+    #workout-engine-blueprint .wo-recommendation {
+      background: var(--wo-surface-2);
+      border-radius: 11px;
+      margin-top: 14px;
+      padding: 13px;
+    }
+
+    #workout-engine-blueprint .wo-recommendation strong { color: var(--wo-blue); font-weight: 500; }
+
+    @media (max-width: 720px) {
+      #workout-engine-blueprint .wo-header { align-items: flex-start; flex-direction: column; }
+      #workout-engine-blueprint .wo-tabs {
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+      }
+      #workout-engine-blueprint .wo-tab {
+        font-size: 13px;
+        line-height: 1.2;
+        padding: 8px 4px;
+        white-space: normal;
+      }
+      #workout-engine-blueprint .wo-main { padding: 17px; }
+      #workout-engine-blueprint .wo-builder { grid-template-columns: 1fr; }
+      #workout-engine-blueprint .wo-controls { grid-template-columns: 1fr; }
+      #workout-engine-blueprint .wo-signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #workout-engine-blueprint .wo-flow { grid-template-columns: 1fr; }
+      #workout-engine-blueprint .wo-flow-node:not(:last-child)::after { bottom: -23px; left: 50%; right: auto; top: auto; transform: translateX(-50%) rotate(90deg); }
+      #workout-engine-blueprint .wo-host-map { grid-template-columns: 1fr; }
+      #workout-engine-blueprint .wo-title-row { flex-direction: column; }
+    }
+  </style>
+
+  <section class="wo-app" aria-label="Health Plus workout engine proposal">
+    <header class="wo-header">
+      <div class="wo-brand">Health<span>+</span> Workout Engine</div>
+      <nav class="wo-tabs" aria-label="Proposal sections">
+        <button type="button" class="wo-tab" data-tab="builder" aria-selected="true">Workout builder</button>
+        <button type="button" class="wo-tab" data-tab="flow" aria-selected="false">How it works</button>
+        <button type="button" class="wo-tab" data-tab="hosting" aria-selected="false">Where it lives</button>
+      </nav>
+      <div class="wo-status">Private health context</div>
+    </header>
+    <main class="wo-main" id="wo-content" aria-live="polite"></main>
+  </section>
+
+  <script>
+    (() => {
+      const root = document.getElementById('workout-engine-blueprint');
+      const content = root.querySelector('#wo-content');
+      const tabs = Array.from(root.querySelectorAll('[data-tab]'));
+      let goal = 'strength';
+      let target = 'full';
+      let equipment = 'home';
+      let hosting = 'laptop';
+      let fitbitDay = 'recovery';
+
+      const fitbitContexts = {
+        recovery: {
+          label: 'Recovery day',
+          sleep: 'Below baseline',
+          readiness: 'Recovery-focused',
+          steps: 'Behind usual pace',
+          heart: 'Recovery signal',
+          recentLoad: 'Accumulated',
+          duration: '25–30 min',
+          intensity: 'Light',
+          volumeDelta: -1,
+          firstBoost: 0,
+          planLead: 'Lighter load and lower volume because today’s Fitbit pattern favors recovery.',
+          rationale: 'Shorter sleep, lower derived readiness and recent load reduce each exercise by one set. The plan avoids high-intensity work and adds an easy walk.',
+          extra: ['Easy Walk', 'Fitbit steps · Comfortable pace', '1', '10 min']
+        },
+        balanced: {
+          label: 'Balanced day',
+          sleep: 'Near baseline',
+          readiness: 'Balanced',
+          steps: 'On usual pace',
+          heart: 'Near baseline',
+          recentLoad: 'Manageable',
+          duration: '40–45 min',
+          intensity: 'Moderate',
+          volumeDelta: 0,
+          firstBoost: 0,
+          planLead: 'Normal training volume with a controlled effort and a short cooldown.',
+          rationale: 'Sleep, heart trends and recent activity look close to your normal pattern, so the plan keeps the standard sets and reps for your goal.',
+          extra: ['Easy Cooldown', 'Mobility · Full body', '1', '5 min']
+        },
+        ready: {
+          label: 'Ready to train',
+          sleep: 'Rested',
+          readiness: 'Ready to train',
+          steps: 'On usual pace',
+          heart: 'Stable trend',
+          recentLoad: 'Well recovered',
+          duration: '50–55 min',
+          intensity: 'Challenging',
+          volumeDelta: 0,
+          firstBoost: 1,
+          planLead: 'Full session with one extra set on the main movement.',
+          rationale: 'Restful sleep, stable heart trends and manageable recent load support the complete session. Only the first main movement gets extra volume.',
+          extra: ['Optional Finisher', 'Conditioning · Controlled effort', '1', '6 min']
+        }
+      };
+
+      const routines = {
+        strength: {
+          full: [
+            ['Goblet Squat', 'Dumbbell · Quads + glutes', '3', '8'],
+            ['Push-Up', 'Bodyweight · Chest + triceps', '3', '10'],
+            ['One-Arm Row', 'Dumbbell · Back + biceps', '3', '10'],
+            ['Romanian Deadlift', 'Dumbbell · Hamstrings', '3', '8']
+          ],
+          upper: [
+            ['Floor Press', 'Dumbbell · Chest + triceps', '4', '8'],
+            ['One-Arm Row', 'Dumbbell · Back + biceps', '4', '8'],
+            ['Overhead Press', 'Dumbbell · Shoulders', '3', '8'],
+            ['Band Pull-Apart', 'Band · Rear shoulders', '3', '15']
+          ],
+          lower: [
+            ['Goblet Squat', 'Dumbbell · Quads + glutes', '4', '8'],
+            ['Romanian Deadlift', 'Dumbbell · Hamstrings', '4', '8'],
+            ['Reverse Lunge', 'Bodyweight · Legs', '3', '10'],
+            ['Calf Raise', 'Bodyweight · Calves', '3', '15']
+          ]
+        },
+        mobility: {
+          full: [
+            ['World’s Greatest Stretch', 'Bodyweight · Full body', '2', '5/side'],
+            ['Cat–Cow', 'Bodyweight · Spine', '2', '8'],
+            ['90/90 Hip Switch', 'Bodyweight · Hips', '2', '8'],
+            ['Wall Slide', 'Bodyweight · Shoulders', '2', '10']
+          ],
+          upper: [
+            ['Wall Slide', 'Bodyweight · Shoulders', '3', '10'],
+            ['Thread the Needle', 'Bodyweight · Upper back', '2', '8/side'],
+            ['Doorway Stretch', 'Bodyweight · Chest', '2', '30 sec'],
+            ['Band Dislocate', 'Band · Shoulders', '2', '10']
+          ],
+          lower: [
+            ['90/90 Hip Switch', 'Bodyweight · Hips', '3', '8'],
+            ['Ankle Rock', 'Bodyweight · Ankles', '2', '10/side'],
+            ['Cossack Squat', 'Bodyweight · Hips', '2', '6/side'],
+            ['Hamstring Sweep', 'Bodyweight · Hamstrings', '2', '8/side']
+          ]
+        },
+        hypertrophy: {
+          full: [
+            ['Goblet Squat', 'Dumbbell · Quads + glutes', '4', '10'],
+            ['Dumbbell Press', 'Dumbbell · Chest', '4', '10'],
+            ['One-Arm Row', 'Dumbbell · Back', '4', '12'],
+            ['Lateral Raise', 'Dumbbell · Shoulders', '3', '15']
+          ],
+          upper: [
+            ['Dumbbell Press', 'Dumbbell · Chest', '4', '10'],
+            ['One-Arm Row', 'Dumbbell · Back', '4', '12'],
+            ['Lateral Raise', 'Dumbbell · Shoulders', '3', '15'],
+            ['Hammer Curl', 'Dumbbell · Biceps', '3', '12']
+          ],
+          lower: [
+            ['Goblet Squat', 'Dumbbell · Quads', '4', '12'],
+            ['Romanian Deadlift', 'Dumbbell · Hamstrings', '4', '10'],
+            ['Bulgarian Split Squat', 'Dumbbell · Legs', '3', '10'],
+            ['Calf Raise', 'Dumbbell · Calves', '4', '15']
+          ]
+        }
+      };
+
+      const equipmentAlternates = {
+        body: {
+          'Goblet Squat': ['Bodyweight Squat', 'Bodyweight · Quads + glutes'],
+          'Dumbbell Press': ['Push-Up', 'Bodyweight · Chest + triceps'],
+          'Floor Press': ['Push-Up', 'Bodyweight · Chest + triceps'],
+          'One-Arm Row': ['Prone Y–T Raise', 'Bodyweight · Upper back'],
+          'Romanian Deadlift': ['Single-Leg Hip Hinge', 'Bodyweight · Hamstrings'],
+          'Overhead Press': ['Pike Push-Up', 'Bodyweight · Shoulders'],
+          'Band Pull-Apart': ['Reverse Snow Angel', 'Bodyweight · Rear shoulders'],
+          'Lateral Raise': ['Plank Shoulder Tap', 'Bodyweight · Shoulders'],
+          'Hammer Curl': ['Chin-Up Hold', 'Bodyweight · Biceps'],
+          'Bulgarian Split Squat': ['Split Squat', 'Bodyweight · Legs'],
+          'Calf Raise': ['Calf Raise', 'Bodyweight · Calves'],
+          'Band Dislocate': ['Shoulder CARs', 'Bodyweight · Shoulders']
+        },
+        gym: {
+          'Goblet Squat': ['Barbell Back Squat', 'Barbell · Quads + glutes'],
+          'Push-Up': ['Bench Press', 'Barbell · Chest + triceps'],
+          'Dumbbell Press': ['Bench Press', 'Barbell · Chest'],
+          'Floor Press': ['Bench Press', 'Barbell · Chest'],
+          'One-Arm Row': ['Seated Cable Row', 'Cable · Back + biceps'],
+          'Romanian Deadlift': ['Barbell Romanian Deadlift', 'Barbell · Hamstrings'],
+          'Overhead Press': ['Barbell Overhead Press', 'Barbell · Shoulders'],
+          'Band Pull-Apart': ['Cable Face Pull', 'Cable · Rear shoulders'],
+          'Lateral Raise': ['Cable Lateral Raise', 'Cable · Shoulders'],
+          'Hammer Curl': ['Cable Curl', 'Cable · Biceps'],
+          'Bulgarian Split Squat': ['Leg Press', 'Machine · Legs'],
+          'Calf Raise': ['Standing Calf Machine', 'Machine · Calves']
+        }
+      };
+
+      function adaptedRoutine() {
+        const context = fitbitContexts[fitbitDay];
+        const adapted = routines[goal][target].map((item, index) => {
+          const replacement = equipmentAlternates[equipment]?.[item[0]];
+          const sets = Math.max(2, Number(item[2]) + context.volumeDelta + (index === 0 && goal !== 'mobility' ? context.firstBoost : 0));
+          return replacement ? [replacement[0], replacement[1], String(sets), item[3]] : [item[0], item[1], String(sets), item[3]];
+        });
+        return [...adapted, context.extra];
+      }
+
+      function builderView() {
+        const routine = adaptedRoutine();
+        const context = fitbitContexts[fitbitDay];
+        const equipmentLabel = equipment === 'home' ? 'Home equipment' : equipment === 'gym' ? 'Full gym' : 'Bodyweight only';
+        return `
+          <div class="wo-title-row">
+            <div><h2>Fitbit-shaped plan for today</h2><p class="wo-sub">Your recovery signals set the workload first; replaceable exercise providers then help choose and balance movements.</p></div>
+            <span class="wo-badge">Preview · ${context.label}</span>
+          </div>
+          <section class="wo-fitbit-context" aria-label="Fitbit context preview">
+            <div class="wo-context-head"><div><h3>Today’s Fitbit context</h3><p class="wo-sub">Preview how different Fitbit days automatically reshape the plan.</p></div><span class="wo-small">Private · read-only</span></div>
+            <div class="wo-day-options" role="group" aria-label="Preview Fitbit day">
+              ${Object.entries(fitbitContexts).map(([key, item]) => `<button type="button" class="wo-day-choice" data-fitbit-day="${key}" aria-pressed="${fitbitDay === key}">${item.label}</button>`).join('')}
+            </div>
+            <div class="wo-signal-grid">
+              <div class="wo-signal"><span>Sleep vs baseline</span><strong>${context.sleep}</strong></div>
+              <div class="wo-signal"><span>Health+ readiness (derived)</span><strong>${context.readiness}</strong></div>
+              <div class="wo-signal"><span>Steps vs usual pace</span><strong>${context.steps}</strong></div>
+              <div class="wo-signal"><span>Heart + HRV trend</span><strong>${context.heart}</strong></div>
+              <div class="wo-signal"><span>Recent training load</span><strong>${context.recentLoad}</strong></div>
+            </div>
+          </div>
+          <div class="wo-controls">
+            <div class="wo-field"><label for="wo-goal">Goal</label><select id="wo-goal"><option value="strength" ${goal === 'strength' ? 'selected' : ''}>Strength</option><option value="hypertrophy" ${goal === 'hypertrophy' ? 'selected' : ''}>Build muscle</option><option value="mobility" ${goal === 'mobility' ? 'selected' : ''}>Mobility</option></select></div>
+            <div class="wo-field"><label for="wo-target">Target</label><select id="wo-target"><option value="full" ${target === 'full' ? 'selected' : ''}>Full body</option><option value="upper" ${target === 'upper' ? 'selected' : ''}>Upper body</option><option value="lower" ${target === 'lower' ? 'selected' : ''}>Lower body</option></select></div>
+            <div class="wo-field"><label for="wo-equipment">Equipment</label><select id="wo-equipment"><option value="home" ${equipment === 'home' ? 'selected' : ''}>Home equipment</option><option value="body" ${equipment === 'body' ? 'selected' : ''}>Bodyweight only</option><option value="gym" ${equipment === 'gym' ? 'selected' : ''}>Full gym</option></select></div>
+          </div>
+          <div class="wo-builder">
+            <section class="wo-panel">
+              <h3>Muscle coverage</h3>
+              <p class="wo-sub">Primary in blue, supporting muscles in amber.</p>
+              <div class="wo-body-map">
+                <div class="wo-figure"><span class="wo-small">Front</span><svg viewBox="0 0 120 200" role="img" aria-label="Front muscle coverage"><circle cx="60" cy="20" r="15" class="wo-body-base"></circle><path d="M40 58 L80 58 M40 58 L28 105 M80 58 L92 105 M49 76 L49 170 M71 76 L71 170" class="wo-body-base"></path><ellipse cx="48" cy="58" rx="16" ry="12" class="wo-muscle"></ellipse><ellipse cx="72" cy="58" rx="16" ry="12" class="wo-muscle"></ellipse><circle cx="27" cy="79" r="10" class="wo-secondary-muscle"></circle><circle cx="93" cy="79" r="10" class="wo-secondary-muscle"></circle><ellipse cx="49" cy="126" rx="10" ry="27" class="wo-muscle"></ellipse><ellipse cx="71" cy="126" rx="10" ry="27" class="wo-muscle"></ellipse></svg></div>
+                <div class="wo-figure"><span class="wo-small">Back</span><svg viewBox="0 0 120 200" role="img" aria-label="Back muscle coverage"><circle cx="60" cy="20" r="15" class="wo-body-base"></circle><path d="M40 58 L80 58 M40 58 L28 105 M80 58 L92 105 M49 76 L49 170 M71 76 L71 170" class="wo-body-base"></path><ellipse cx="48" cy="62" rx="16" ry="17" class="wo-muscle"></ellipse><ellipse cx="72" cy="62" rx="16" ry="17" class="wo-muscle"></ellipse><circle cx="28" cy="82" r="9" class="wo-secondary-muscle"></circle><circle cx="92" cy="82" r="9" class="wo-secondary-muscle"></circle><ellipse cx="49" cy="132" rx="10" ry="24" class="wo-secondary-muscle"></ellipse><ellipse cx="71" cy="132" rx="10" ry="24" class="wo-secondary-muscle"></ellipse></svg></div>
+              </div>
+            </section>
+            <section class="wo-panel">
+              <h3>Recommended routine</h3>
+              <p class="wo-sub">${context.duration} · ${context.intensity} effort · ${context.planLead}</p>
+              <div class="wo-routine-list">
+                ${routine.map(item => `<div class="wo-exercise"><div><strong>${item[0]}</strong><span>${item[1]}</span></div><div class="wo-set"><span>Sets</span><strong>${item[2]}</strong></div><div class="wo-set"><span>Reps</span><strong>${item[3]}</strong></div></div>`).join('')}
+              </div>
+              <div class="wo-rationale"><strong>Why today’s plan changed</strong><p>${context.rationale}</p></div>
+              <div class="wo-source-line">ExerciseAPI: instructions, safety notes and variations · MusclesWorked: muscle map, balance and alternatives</div>
+            </section>
+          </div>
+        `;
+      }
+
+      function flowView() {
+        return `
+          <div class="wo-title-row">
+            <div><h2>How the recommendation engine works</h2><p class="wo-sub">Personal health data and public exercise knowledge stay in separate lanes.</p></div>
+            <span class="wo-badge">Read-only first</span>
+          </div>
+          <div class="wo-flow" role="list" aria-label="Workout recommendation data flow">
+            <section class="wo-flow-node" role="listitem"><strong>1 · Fitbit signals</strong><p>Sleep, reconciled steps, heart and HRV trends, and recent activity are read privately.</p><em>Fitbit MCP · private</em></section>
+            <section class="wo-flow-node" role="listitem"><strong>2 · Daily load decision</strong><p>Health+ derives recovery context, then sets intensity, duration, volume and rest.</p><em>Your goals + limits + equipment</em></section>
+            <section class="wo-flow-node" role="listitem"><strong>3 · Exercise selection</strong><p>ExerciseAPI supplies movements and guidance; MusclesWorked checks balance and alternatives.</p><em>Generic queries only</em></section>
+            <section class="wo-flow-node" role="listitem"><strong>4 · Explained plan</strong><p>You see what changed and why, can swap exercises, then approve or adjust the session.</p><em>Dashboard + ChatGPT + Claude</em></section>
+          </div>
+          <div class="wo-privacy">Only generic exercise queries leave your laptop. Raw Fitbit history does not need to be sent to either exercise-library provider.</div>
+        `;
+      }
+
+      function hostingView() {
+        const laptop = hosting === 'laptop';
+        return `
+          <div class="wo-title-row">
+            <div><h2>Where the app would live</h2><p class="wo-sub">A separate Health+ product—not inside the Fitbit connector repository.</p></div>
+            <span class="wo-badge">${laptop ? 'Recommended now' : 'Possible later'}</span>
+          </div>
+          <div class="wo-host-options" role="group" aria-label="Hosting model">
+            <button type="button" class="wo-host-choice" data-host="laptop" aria-pressed="${laptop}">Laptop-first</button>
+            <button type="button" class="wo-host-choice" data-host="cloud" aria-pressed="${!laptop}">Cloud-first later</button>
+          </div>
+          <div class="wo-host-map">
+            <section class="wo-host-column"><h3>${laptop ? 'Your private server' : 'Cloud application'}</h3><ul><li><strong>Health+ service</strong><span>${laptop ? 'Private service on the household network' : 'Cloudflare Worker or managed backend'}</span></li><li><strong>Fitbit MCP</strong><span>${laptop ? 'Protected connector; tokens stay private' : 'Still reached through its protected portal'}</span></li><li><strong>Health database</strong><span>${laptop ? 'Encrypted local database first' : 'Encrypted cloud database with per-user access'}</span></li></ul></section>
+            <section class="wo-host-column"><h3>Cloudflare edge</h3><ul><li><strong>health.example.com</strong><span>Private dashboard hostname</span></li><li><strong>Cloudflare Access</strong><span>Separate household member access</span></li><li><strong>Existing Tunnel</strong><span>${laptop ? 'Publishes only the Health+ private service' : 'Protects remaining private services'}</span></li></ul></section>
+            <section class="wo-host-column"><h3>Your clients</h3><ul><li><strong>Browser / phone</strong><span>Responsive dashboard or installable PWA</span></li><li><strong>ChatGPT</strong><span>Health+ MCP for conversational plans</span></li><li><strong>Claude</strong><span>Same tools with each member’s own authorization</span></li></ul></section>
+          </div>
+          <div class="wo-recommendation"><strong>${laptop ? 'Recommended:' : 'Later option:'}</strong> ${laptop ? 'Create a new `health-plus` repository and run it as a separate private service. It consumes Fitbit MCP and replaceable exercise providers, while `fitbit-mcp` remains a clean data connector.' : 'Move the dashboard and recommendation engine to Cloudflare when you need uptime independent of the private server. Keep the Fitbit connector isolated behind its existing OAuth boundary.'}</div>
+        `;
+      }
+
+      const views = { builder: builderView, flow: flowView, hosting: hostingView };
+
+      function bindView(name) {
+        if (name === 'builder') {
+          root.querySelector('#wo-goal').addEventListener('change', event => { goal = event.target.value; render('builder'); });
+          root.querySelector('#wo-target').addEventListener('change', event => { target = event.target.value; render('builder'); });
+          root.querySelector('#wo-equipment').addEventListener('change', event => { equipment = event.target.value; render('builder'); });
+          root.querySelectorAll('[data-fitbit-day]').forEach(button => button.addEventListener('click', () => { fitbitDay = button.dataset.fitbitDay; render('builder'); }));
+        }
+        if (name === 'hosting') {
+          root.querySelectorAll('[data-host]').forEach(button => button.addEventListener('click', () => { hosting = button.dataset.host; render('hosting'); }));
+        }
+      }
+
+      function render(name) {
+        tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.tab === name)));
+        content.innerHTML = views[name]();
+        bindView(name);
+      }
+
+      tabs.forEach(tab => tab.addEventListener('click', () => render(tab.dataset.tab)));
+      render('builder');
+    })();
+  </script>
+</div>
+</body>
+</html>
